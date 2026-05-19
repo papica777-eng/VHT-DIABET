@@ -594,6 +594,7 @@
         }
 
         function handleNeuralLinkToggle(e) {
+            // ДИРЕКТИВА: При прекъсване на Neural Link, SovereignHUD.tsx автоматически преминава в Emergency_Local_Mode, докато Knox не потвърди нов Heartbeat.
             state.neuralLinkConnected = e.checked;
             state.emergencyMode = !state.neuralLinkConnected;
             

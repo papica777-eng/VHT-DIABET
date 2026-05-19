@@ -8,6 +8,15 @@
 
 ---
 
+## 🌌 Sovereign Masterpiece Showcase
+Developed and signed by **Dimitar Prodromov (Architect)**.
+
+![Aeterna VHT Sovereign Masterpiece](refined_purple_twins_signed.png)
+
+*The official clinical-grade concept art of the AETERNA-VHT platform, visualizing the multi-scale biological twins in a Webb stellar void space environment, signed by the Sovereign Architect.*
+
+---
+
 ## 🌟 Overview
 
 The **AETERNA Virtual Human Twin (VHT) Suite v5.0** is a clinical-grade, high-performance in-silico simulation and multi-systemic therapeutic platform. Operating at **Technology Readiness Level 7 (TRL 7)**, the platform constructs a real-time, multi-scale digital twin of a patient's unique biological substrates, replacing empirical heuristics with deterministic biophysical forecasting across four core clinical directions:
