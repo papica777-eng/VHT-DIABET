@@ -395,7 +395,8 @@
                 epigeneticAge: 74.50,
                 zombiePct: 42.10,
                 telomereLength: 4.80,
-                entropy: 3.95
+                entropy: 3.95,
+                mitochondrialEntropy: 0.65
             },
             
             logs: [
@@ -545,6 +546,7 @@
                     state.longevity.epigeneticAge = parseFloat((74.50 - (74.50 - 32.00) * pct).toFixed(2));
                     state.longevity.zombiePct = parseFloat((42.10 - (42.10 - 1.50) * pct).toFixed(2));
                     state.longevity.telomereLength = parseFloat((4.80 + (9.20 - 4.80) * pct).toFixed(2));
+                    state.longevity.mitochondrialEntropy = parseFloat((0.65 - (0.65 - 0.05) * pct).toFixed(2));
                 }
 
                 if(step >= steps) {
@@ -585,6 +587,7 @@
                 state.longevity.epigeneticAge = 74.50;
                 state.longevity.zombiePct = 42.10;
                 state.longevity.telomereLength = 4.80;
+                state.longevity.mitochondrialEntropy = 0.65;
                 addLogEntry("♻️ Нулиране на клетъчната био-възраст към напреднало стареене (Hayflick риск).");
             }
             renderVanillaHUD();
@@ -988,8 +991,8 @@
                         ? 'Коронарната съдова проходимост е възстановена. LVEF е нормализиран на 62% чрез редукция на съпротивлението до 1.00. 60-минутният прединфарктен оракул показва стабилно ниво на сигурност (1.20% риск).'
                         : 'ПАЦИЕНТЪТ Е В ОСТРА КАРДИО-ИСХЕМИЧНА КРИЗА! 94.50% риск от инфаркт в следващите 45 минути на база ЕКГ ST-елевация. Незабавно индицирайте съдовата стабилизация.';
                 } else {
-                    leftTitle = "🧬 Клетъчно подмладяване и Hayflick подмладяване";
-                    leftDesc = "Horvath Епигенетичен часовник и редукция на сенесцентни клетки (Zombie cells) чрез D+Q сенолитично прочистване.";
+                    leftTitle = "🧬 Клетъчно подмладяване и Митохондриален контрол";
+                    leftDesc = "Horvath Епигенетичен часовник и редукция на митохондриалната ентропия чрез насочен автоложен трансфер.";
                     biomarkersHtml = `
                         <div style="border-left: 4px solid var(--neon-emerald); padding-left: 12px;">
                             <div style="font-size: 0.75rem; color: var(--text-secondary);">Биологична възраст (Horvath)</div>
@@ -1012,6 +1015,13 @@
                             </div>
                             <span style="font-size: 0.7rem; color: var(--text-secondary);">КритиченHayflick: 5.00 kbp</span>
                         </div>
+                        <div style="border-left: 4px solid var(--neon-blue); padding-left: 12px;">
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Митохондриална Ентропия</div>
+                            <div style="font-size: 1.4rem; font-weight: 900;" class="mono ${isCured ? 'glow-text-emerald' : 'glow-text-red animate-pulse'}">
+                                ${(state.longevity.mitochondrialEntropy * 100).toFixed(0)}%
+                            </div>
+                            <span style="font-size: 0.7rem; color: var(--text-secondary);">Критичен mtDNA: &gt; 35%</span>
+                        </div>
                     `;
                     patientInfoHtml = `
                         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(181,95,230,0.08); padding-bottom: 6px;">
@@ -1022,6 +1032,12 @@
                             <span style="color: var(--text-secondary);">YAMANAKA OSK ИНДУКЦИЯ:</span>
                             <span style="font-weight: 700; color: ${isCured ? 'var(--neon-emerald)' : 'var(--neon-red)'};">
                                 ${isCured ? 'ACTIVE (Oct4/Sox2/Klf4)' : 'OFFLINE'}
+                            </span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(181,95,230,0.08); padding-bottom: 6px;">
+                            <span style="color: var(--text-secondary);">МИТОХОНДРИАЛЕН ТРАНСФЕР:</span>
+                            <span style="font-weight: 700; color: ${isCured ? 'var(--neon-emerald)' : 'var(--neon-red)'};">
+                                ${isCured ? 'COMPLETED (Stem-derived)' : 'ABORTED (mtDNA Damage)'}
                             </span>
                         </div>
                         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(181,95,230,0.08); padding-bottom: 6px;">
@@ -1036,8 +1052,8 @@
                         </div>
                     `;
                     clinicalConclusion = isCured 
-                        ? 'Сенолитичното прочистване с D+Q елиминира токсичните зомби клетки до 1.50%. Частичният Yamanaka OSK протокол намали биологичната възраст до 32.0 години с абсолютна защита срещу онкогенеза.'
-                        : 'Клетките са достигнали Hayflick лимита с критично къси теломери (4.80 kbp). Високото SASP възпаление разрушава околните здрави тъкани. Изпълнете сенолитичния рестарт.';
+                        ? 'Сенолитичното прочистване с D+Q елиминира токсичните зомби клетки до 1.50%. Насоченият автоложен трансфер на здрави митохондрии сведе mtDNA мутационния товар до 5.0%, нормализирайки ATP производството. Частичният Yamanaka OSK протокол безопасно намали биологичната възраст до 32.0 години.'
+                        : 'Клетките са достигнали Hayflick лимита с критично къси теломери (4.80 kbp). Митохондриалната ентропия е критична (65% мутационен товар на mtDNA), което блокира клетъчното дишане. Изпълнете спешния биологичен рестарт.';
                 }
 
                 tabContent = `
@@ -1068,7 +1084,7 @@
                             </div>
 
                             <!-- Biomarkers -->
-                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+                            <div style="display: grid; grid-template-columns: repeat(${active === 'longevity' ? 4 : 3}, 1fr); gap: 16px;">
                                 ${biomarkersHtml}
                             </div>
                         </div>
