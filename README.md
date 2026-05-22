@@ -11,9 +11,9 @@
 ## 🌌 Sovereign Masterpiece Showcase
 Developed and signed by **Dimitar Prodromov (Architect)**.
 
-![Aeterna VHT Sovereign Masterpiece](https://raw.githubusercontent.com/papica777-eng/VHT-DIABET/main/refined_purple_twins_signed.png)
+![Aeterna VHT-DIABET Sovereign Masterpiece](https://raw.githubusercontent.com/papica777-eng/VHT-DIABET/main/vht_diabet_poster_signed.png)
 
-*The official clinical-grade concept art of the AETERNA-VHT platform, visualizing the multi-scale biological twins in a Webb stellar void space environment, signed by the Sovereign Architect.*
+*The official clinical-grade concept art of the AETERNA VHT-DIABET platform, visualizing the high-fidelity glycemic system, pancreatic beta-cell regeneration, and metabolic restoration pathways, signed by the Sovereign Architect.*
 
 ---
 
