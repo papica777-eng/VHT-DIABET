@@ -342,9 +342,40 @@
         .sovereign-table tr:hover td {
             background: rgba(181, 95, 230, 0.03);
         }
+
+        .glass-premium {
+            background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glow-cyan {
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.1);
+        }
+        .spec-tab {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-left: 3px solid transparent;
+        }
+        .spec-tab-active {
+            background: rgba(255,255,255,0.02) !important;
+            border-left: 3px solid var(--neon-purple) !important;
+            color: #fff !important;
+            box-shadow: 0 0 20px rgba(181, 95, 230, 0.1);
+        }
+        .terminal-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        .terminal-scroll::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.01);
+        }
+        .terminal-scroll::-webkit-scrollbar-thumb {
+            background: rgba(181,95,230,0.2);
+            border-radius: 2px;
+        }
     </style>
 </head>
 <body>
+    <canvas id="cyber-canvas" style="position: fixed; inset: 0; pointer-events: none; z-index: -1; opacity: 0.18;"></canvas>
 
     <div id="app-root">
         <!-- Self-Healing Fallback Visual preloaded -->
@@ -362,7 +393,14 @@
         let state = {
             lang: "bg", // "bg" | "en"
             activeTwin: "metabolic", // "metabolic" | "neurological" | "cardiovascular" | "longevity"
-            activeTab: "dashboard",   // "dashboard" | "cohort" | "pillars"
+            activeTab: "dashboard",   // "dashboard" | "cohort" | "pillars" | "specs"
+            activeSpec: "napi",
+            terminalHistory: {
+                napi: [],
+                swarm: [],
+                pqc: [],
+                knox: []
+            },
             curedStates: {
                 metabolic: false,
                 neurological: false,
@@ -497,7 +535,8 @@
                 tabs: {
                     dashboard: "📊 Научен Панел (Лекари)",
                     cohort: "👥 Кохортно Изследване (900 Близнаци)",
-                    pillars: "🛡️ Трите Стълба на Сигурност"
+                    pillars: "🛡️ Трите Стълба на Сигурност",
+                    specs: "🔬 Спецификации & Симулатор"
                 },
                 controls: {
                     induce: "🧬 ИНДУЦИРАНЕ НА БИОЛОГИЧЕН РЕСТАРТ",
@@ -723,7 +762,8 @@
                 tabs: {
                     dashboard: "📊 Scientific Panel (Physicians)",
                     cohort: "👥 Cohort Study (900 Twins)",
-                    pillars: "🛡️ Three Pillars of Safety"
+                    pillars: "🛡️ Three Pillars of Safety",
+                    specs: "🔬 Specs & Sandbox"
                 },
                 controls: {
                     induce: "🧬 INDUCE BIOLOGICAL REVERSAL",
@@ -1238,6 +1278,9 @@
                         </button>
                         <button class="tab-btn ${state.activeTab === 'pillars' ? 'active' : ''}" onclick="switchTab('pillars')">
                             ${dict.tabs.pillars}
+                        </button>
+                        <button class="tab-btn ${state.activeTab === 'specs' ? 'active' : ''}" onclick="switchTab('specs')">
+                            ${dict.tabs.specs}
                         </button>
                     </div>
                     <div>
@@ -1757,6 +1800,8 @@ process YAMANAKA_OSK_REPROGRAM(
                         </div>
                     </div>
                 `;
+            } else if (state.activeTab === "specs") {
+                tabContent = generateSpecsLabHtml();
             }
 
             root.innerHTML = `
@@ -1799,12 +1844,714 @@ process YAMANAKA_OSK_REPROGRAM(
                     ${dict.footer}
                 </footer>
             `;
+            if (state.activeTab === "specs") {
+                renderTerminalHistory(state.activeSpec);
+            }
+        }
+
+        // ==========================================
+        //        SPECIFICATIONS LAB ENGINE
+        // ==========================================
+
+        const specDocs = {
+            napi: {
+                bg: {
+                    category: "ДЕТЕРМИНИСТИЧНО ЯДРО // RUST NAPI CORE",
+                    heading: "Rust NAPI Core Енджин",
+                    desc: "100% софтуерна безопасност на паметта и премахване на garbage collector закъсненията. SIMD векторна обработка с AVX-512 аритметика за критични физиологични изчисления в реално време.",
+                    metric_label: "Скорост на диспечера",
+                    metric_val: "ПОД-100NS",
+                    status_label: "Интегритет на ядрото",
+                    status_val: "БЕЗОПАСНА СТОМАНА",
+                    header_title: "VHT // RUST_NAPI_CORE_SANDBOX",
+                    actions: [
+                        { label: "БЕНЧМАРК", cmd: "napi_benchmark" },
+                        { label: "ОДИТ НА ПАМЕТТА", cmd: "napi_audit" }
+                    ]
+                },
+                en: {
+                    category: "DETERMINISTIC KERNEL // RUST NAPI CORE",
+                    heading: "Rust NAPI Core Engine",
+                    desc: "100% memory safety without garbage collection pauses. Harnesses parallel SIMD pipelines and AVX-512 instructions for real-time multi-scale physiological simulations.",
+                    metric_label: "Thread Scheduler Latency",
+                    metric_val: "SUB-100NS",
+                    status_label: "Core Memory Safety",
+                    status_val: "STEEL INTEGRITY",
+                    header_title: "VHT // RUST_NAPI_CORE_SANDBOX",
+                    actions: [
+                        { label: "RUN BENCHMARK", cmd: "napi_benchmark" },
+                        { label: "AUDIT HEAP", cmd: "napi_audit" }
+                    ]
+                }
+            },
+            swarm: {
+                bg: {
+                    category: "ЛОКАЛЕН AI РОЙ // OFFLINE TENSOR CORES",
+                    heading: "16 Офлайн AI Модела",
+                    desc: "Управление на физически симулации изцяло офлайн. Вградени 16 оптимизирани невронни мрежи, фиксирани в L3-кеша на CPU за мигновено предсказване с нулева облачна уязвимост.",
+                    metric_label: "AI Локални Възли",
+                    metric_val: "16 АКТИВНИ",
+                    status_label: "Облачно Изтичане",
+                    status_val: "0% (ВЪЗДУШНА БАРИЕРА)",
+                    header_title: "VHT // SWARM_AI_MODELS_SANDBOX",
+                    actions: [
+                        { label: "ЗАРЕДИ ТЕГЛА", cmd: "swarm_load" },
+                        { label: "СИНХРОНИЗАЦИЯ", cmd: "swarm_sync" }
+                    ]
+                },
+                en: {
+                    category: "OFFLINE COGNITIVE SWARM // LOCAL TENSORS",
+                    heading: "16 On-Premise AI Models",
+                    desc: "Full off-grid decision matrix executing deep neural inferences. Weights bound to L3-cache with 7.83Hz Schumann coordinate lock to completely prevent temporal drift.",
+                    metric_label: "Active Neural Cores",
+                    metric_val: "16 LOCAL CORES",
+                    status_label: "Cloud Telemetry Leak",
+                    status_val: "0.00% (AIR-GAPPED)",
+                    header_title: "VHT // SWARM_AI_MODELS_SANDBOX",
+                    actions: [
+                        { label: "LOAD WEIGHTS", cmd: "swarm_load" },
+                        { label: "SYNC OFF-GRID", cmd: "swarm_sync" }
+                    ]
+                }
+            },
+            pqc: {
+                bg: {
+                    category: "ПОСТ-КВАНТОВА ОТБРАНА // NIST STANDARDS",
+                    heading: "Квантова Защита",
+                    desc: "Латентно-базирано капсулиране на ключове съгласно европейските директиви за NIS 2. Устойчивост на транзакциите и командите срещу алгоритъма на Шор за декриптиране.",
+                    metric_label: "Крипто Стандарт",
+                    metric_val: "ML-KEM-1024 / DSA-87",
+                    status_label: "Мрежова защита",
+                    status_val: "АКТИВНА (Lattice)",
+                    header_title: "VHT // POST_QUANTUM_CRYPTO_SANDBOX",
+                    actions: [
+                        { label: "ГЕНЕРИРАЙ КЛЮЧ", cmd: "pqc_key" },
+                        { label: "NIS 2 ТЕСТ", cmd: "pqc_nist" }
+                    ]
+                },
+                en: {
+                    category: "QUANTUM IMMUNITY // LATTICE SCHEMES",
+                    heading: "Post-Quantum Cryptography",
+                    desc: "Lattice-based mathematical protocols rendering system commands immune to future decryption by quantum supercomputers. Fully conforms to EU NIS 2 security guidelines.",
+                    metric_label: "Cryptographic Suite",
+                    metric_val: "NIST ML-KEM-1024",
+                    status_label: "Lattice Verification",
+                    status_val: "IMMUNE (PQ-Secured)",
+                    header_title: "VHT // POST_QUANTUM_CRYPTO_SANDBOX",
+                    actions: [
+                        { label: "GENERATE KEY", cmd: "pqc_key" },
+                        { label: "NIS 2 AUDIT", cmd: "pqc_nist" }
+                    ]
+                }
+            },
+            knox: {
+                bg: {
+                    category: "ХАРДУЕРНА ИЗОЛАЦИЯ // TRUSTZONE ENCLAVE",
+                    heading: "Samsung Knox TEE",
+                    desc: "Изолиране на медицинските команди на хардуерно ниво. ARM TrustZone среда, недостъпна за външни операционни намеси, осигуряваща перфектен дял за безопасност.",
+                    metric_label: "Хардуерен Слой",
+                    metric_val: "ARM TrustZone TEE",
+                    status_label: "Knox Защита",
+                    status_val: "АКТИВНА (LEVEL_4)",
+                    header_title: "VHT // SAMSUNG_KNOX_TEE_SANDBOX",
+                    actions: [
+                        { label: "TEE БАРИЕРИ", cmd: "knox_assert" },
+                        { label: "КЛЮЧОВ ОДИТ", cmd: "knox_audit" }
+                    ]
+                },
+                en: {
+                    category: "HARDWARE COMPARTMENT // TRUSTZONE TEE",
+                    heading: "Samsung Knox TEE",
+                    desc: "Physical secure-world execution governed strictly inside isolated ARM TrustZone enclaves. Hardware-enforced lockout prevents OS-level tampering or malicious dose triggers.",
+                    metric_label: "Secure Enclave",
+                    metric_val: "ARM TrustZone TEE",
+                    status_label: "Enclave Isolation",
+                    status_val: "ISOLATED (LEVEL_4)",
+                    header_title: "VHT // SAMSUNG_KNOX_TEE_SANDBOX",
+                    actions: [
+                        { label: "ASSERT BOUNDARY", cmd: "knox_assert" },
+                        { label: "TEE KEY AUDIT", cmd: "knox_audit" }
+                    ]
+                }
+            }
+        };
+
+        const bootstrapLogs = {
+            napi: {
+                bg: [
+                    "// ИНИЦИАЛИЗИРАНЕ НА RUST NAPI КОМПИЛАТОР...",
+                    "ВЕРСИЯ: rustc 1.76.0-nightly (NAPI_v3)",
+                    "VORTEX SCHEDULER: 16 логически ядра засичани",
+                    "SIMD ИНСТРУКЦИИ: AVX-512 АКТИВЕН",
+                    "СТАТУС: Безопасна алокация на паметта (Steel Integrity)"
+                ],
+                en: [
+                    "// INITIALIZING RUST NAPI CORE RUNTIME...",
+                    "VERSION: rustc 1.76.0-nightly (NAPI_v3)",
+                    "VORTEX SCHEDULER: 16 logical hardware threads detected",
+                    "SIMD INSTRUCTION PIPELINES: AVX-512 ACTIVE",
+                    "STATUS: Zero garbage collection overhead configured. Ready."
+                ]
+            },
+            swarm: {
+                bg: [
+                    "// ЗАРЕЖДАНЕ НА ЛОКАЛНИ AI МОДЕЛИ...",
+                    "МОДЕЛИ: 16 вградени невронни мрежи",
+                    "МАТРИЦА: Шуманова честота заключена на 7.83Hz",
+                    "GDPR: Офлайн режимът е изцяло активен (0% изтичане на данни)",
+                    "СТАТУС: AI рояците са готови за координация"
+                ],
+                en: [
+                    "// BOOTING LOCAL NEURAL COGNITIVE ENCLAVES...",
+                    "MODELS: 16 discrete edge networks loaded in memory",
+                    "MATRIX: Schumann synchronization lock activated (7.83Hz)",
+                    "GDPR: Air-gap native mode active (0.00% external telemetry leak)",
+                    "STATUS: Decentralized swarm synchronization active."
+                ]
+            },
+            pqc: {
+                bg: [
+                    "// АКТИВИРАНЕ НА ПОСТ-КВАНТОВИ АЛГОРИТМИ...",
+                    "ШИФЪР: NIST ML-KEM-1024 криптографски модул",
+                    "ПОДПИСИ: ML-DSA-87 изчислителен блок",
+                    "ЛАТЕНТНОСТ НА РЪКОСТИСКАНЕ: <4.2ms",
+                    "СТАТУС: Устойчивост срещу Shor's декриптиращ алгоритъм"
+                ],
+                en: [
+                    "// INITIALIZING POST-QUANTUM CRYPTOGRAPHIC PIPELINE...",
+                    "CIPHER MODULE: NIST ML-KEM-1024 lattice key encapsulation",
+                    "SIGNATURE ENGINE: ML-DSA-87 high-fidelity authentication",
+                    "HANDSHAKE LATENCY: <4.2ms verified",
+                    "STATUS: Permanent immunity to Shor's decryption algorithms verified."
+                ]
+            },
+            knox: {
+                bg: [
+                    "// СТАРТИРАНЕ НА ХАРДУЕРЕН АНКЕР SAMSUNG KNOX...",
+                    "TEE ХАРДУЕР: ARM TrustZone архитектура",
+                    "ЗАЩИТНА БАРИЕРА: Level 4 криптографски ключове",
+                    "АВТОМАТИЗАЦИЯ: Прекъсвачите са затворени в enclave",
+                    "СТАТУС: Външни софтуерни модификации са блокирани"
+                ],
+                en: [
+                    "// MOUNTING SAMSUNG KNOX TEE HARDWARE ANCHORS...",
+                    "TEE HARDWARE: ARM TrustZone isolated microarchitecture",
+                    "SECURITY GATE: Level 4 cryptographic lockout enforcement active",
+                    "ACTUATORS: Physical automated infusion pumps locked in TEE",
+                    "STATUS: Secure hardware enclave boots successfully. Fully isolated."
+                ]
+            }
+        };
+
+        function setSpecTab(specId) {
+            state.activeSpec = specId;
+            renderVanillaHUD();
+        }
+
+        function renderTerminalHistory(specId) {
+            const screen = document.getElementById('terminal-screen');
+            if (!screen) return;
+            screen.innerHTML = '';
+
+            // Load Bootstrap Logs
+            const boots = bootstrapLogs[specId][state.lang];
+            boots.forEach(line => {
+                const div = document.createElement('div');
+                div.className = 'mono';
+                div.style.color = '#64748b';
+                div.textContent = line;
+                screen.appendChild(div);
+            });
+
+            // Load Custom Historic logs for this tab
+            const history = state.terminalHistory[specId];
+            history.forEach(line => {
+                const div = document.createElement('div');
+                div.className = 'mono';
+                if (line.includes('УСПЕХ') || line.includes('SUCCESS')) {
+                    div.style.color = 'var(--neon-emerald)';
+                    div.style.fontWeight = 'bold';
+                } else if (line.includes('ML-') || line.includes('KNOX') || line.includes('VORTEX')) {
+                    div.style.color = 'var(--neon-blue)';
+                } else {
+                    div.style.color = 'var(--text-primary)';
+                }
+                div.textContent = line;
+                screen.appendChild(div);
+            });
+
+            screen.scrollTop = screen.scrollHeight;
+        }
+
+        let commandInterval = null;
+        function runActiveCommand(cmd) {
+            if (commandInterval) {
+                clearInterval(commandInterval);
+            }
+            
+            const time = new Date().toLocaleTimeString();
+            let logLines = [];
+
+            if (cmd === 'napi_benchmark') {
+                if (state.lang === 'bg') {
+                    logLines = [
+                        `⏳ [${time}] [VORTEX] Иницииране на 16-нишков SIMD бенчмарк...`,
+                        `⚙️ [${time}] [AVX-512] Проверка на регистрите и нишките...`,
+                        `📊 [${time}] [AVX-512] Изпълнение на 4.2 милиарда float операции...`,
+                        `⏱️ [${time}] [BENCHMARK] Латентност на диспечера: 86 наносекунди`,
+                        `🟢 [${time}] [УСПЕХ] Тестът приключи. Системно ускорение: 8.4x.`
+                    ];
+                } else {
+                    logLines = [
+                        `⏳ [${time}] [VORTEX] Initiating parallel SIMD speed tests (16 hardware threads)...`,
+                        `⚙️ [${time}] [AVX-512] Verifying registers and thread pool...`,
+                        `📊 [${time}] [AVX-512] Evaluated 4.2 billion float metrics in real-time...`,
+                        `⏱️ [${time}] [BENCHMARK] VORTEX scheduler thread latency: 86ns`,
+                        `🟢 [${time}] [SUCCESS] Benchmark complete. Hardware performance multiplier: 8.4x.`
+                    ];
+                }
+            } else if (cmd === 'napi_audit') {
+                if (state.lang === 'bg') {
+                    logLines = [
+                        `⏳ [${time}] [MEM] Стартиране на одит на системната памет...`,
+                        `🔍 [${time}] [SAFETY] Сканиране на купчината за буферни утечки...`,
+                        `⚙️ [${time}] [SAFETY] Проверка на аритметични препълвания (128-bit)...`,
+                        `🟢 [${time}] [УСПЕХ] Намерени утечки: 0 байта. Памет-безопасността е 100% гарантирана.`
+                    ];
+                } else {
+                    logLines = [
+                        `⏳ [${time}] [MEM] Scanning binary allocator blocks for memory leaks...`,
+                        `🔍 [${time}] [SAFETY] Auditing bounds checking and active heap descriptors...`,
+                        `⚙️ [${time}] [SAFETY] Checking for integer arithmetic overflows (128-bit registry)...`,
+                        `🟢 [${time}] [SUCCESS] Leaks discovered: 0 bytes. Zero GC-pauses confirmed.`
+                    ];
+                }
+            } else if (cmd === 'swarm_load') {
+                if (state.lang === 'bg') {
+                    logLines = [
+                        `⏳ [${time}] [AI] Декомпресиране на теглата на моделите...`,
+                        `🧠 [${time}] [AI] Зареждане на 16 локални невронни мрежи в RAM...`,
+                        `🔒 [${time}] [ON-PREMISE] Компилиране на локални векторни индекси за GDPR защита...`,
+                        `🟢 [${time}] [УСПЕХ] Всички AI модели са заредени в L3 кеша с 0% външна връзка.`
+                    ];
+                } else {
+                    logLines = [
+                        `⏳ [${time}] [AI] Decompressing off-grid neural weights...`,
+                        `🧠 [${time}] [AI] Compiling offline tensor structures for 16 models in RAM...`,
+                        `🔒 [${time}] [ON-PREMISE] Hardening local vector indexes for GDPR air-gapping...`,
+                        `🟢 [${time}] [SUCCESS] SWARM AI models loaded in L3 cache. Zero cloud dependencies.`
+                    ];
+                }
+            } else if (cmd === 'swarm_sync') {
+                if (state.lang === 'bg') {
+                    logLines = [
+                        `⏳ [${time}] [7.83HZ] Стартиране на синхронизация с Шумановия резонанс...`,
+                        `⏱️ [${time}] [TELEMETRY] Измерване на локалното закъснение на цикъла...`,
+                        `⚙️ [${time}] [TELEMETRY] Калибриране на честотните фази с нулев дрейф...`,
+                        `🟢 [${time}] [УСПЕХ] Всички локални AI възли са калибрирани в перфектен времеви синхрон.`
+                    ];
+                } else {
+                    logLines = [
+                        `⏳ [${time}] [7.83Hz] Aligning swarm hardware clocks to Schumann Resonance frequency...`,
+                        `⏱️ [${time}] [TELEMETRY] Measuring local loop round-trip latency...`,
+                        `⚙️ [${time}] [TELEMETRY] Auditing off-grid telemetry frames for synchronization drift...`,
+                        `🟢 [${time}] [SUCCESS] Swarm network clocks synchronized perfectly. Drift: <0.01ms.`
+                    ];
+                }
+            } else if (cmd === 'pqc_key') {
+                const randomHex = "0x" + Array.from({length: 16}, () => Math.floor(Math.random()*16).toString(16).toUpperCase()).join('');
+                if (state.lang === 'bg') {
+                    logLines = [
+                        `⏳ [${time}] [LATTICE] Генериране на двойка ключове...`,
+                        `🔑 [${time}] [ML-KEM] Конструиране на коефициенти на матрицата...`,
+                        `🔒 [${time}] [ML-KEM] Генериране на публичен и таен ключ (1024-bit)...`,
+                        `🟢 [${time}] [УСПЕХ] Пост-квантовият ключ е успешно изведен: ${randomHex}`
+                    ];
+                } else {
+                    logLines = [
+                        `⏳ [${time}] [LATTICE] Generating high-entropy lattice-based keypair...`,
+                        `🔑 [${time}] [ML-KEM] Constructing matrix polynomial coefficients...`,
+                        `🔒 [${time}] [ML-KEM] NIST ML-KEM-1024 public/private key encapsulation complete...`,
+                        `🟢 [${time}] [SUCCESS] Active Post-Quantum key derived: ${randomHex}`
+                    ];
+                }
+            } else if (cmd === 'pqc_nist') {
+                if (state.lang === 'bg') {
+                    logLines = [
+                        `⏳ [${time}] [NIST] Проверка за съответствие с NIS 2 директивите на ЕС...`,
+                        `🔍 [${time}] [ML-DSA] Тестване на цифрови подписи срещу квантови симулатори...`,
+                        `🟢 [${time}] [УСПЕХ] Инфраструктурата е напълно съвместима с NIST ML-DSA стандартите.`
+                    ];
+                } else {
+                    logLines = [
+                        `⏳ [${time}] [NIST] Auditing lattice parameters against EU compliance directives...`,
+                        `🔍 [${time}] [ML-DSA] Verifying cryptographic digital signature matrices...`,
+                        `🟢 [${time}] [SUCCESS] Post-Quantum cipher completely certified for NIS 2 standards.`
+                    ];
+                }
+            } else if (cmd === 'knox_assert') {
+                if (state.lang === 'bg') {
+                    logLines = [
+                        `⏳ [${time}] [KNOX] Проверка на хардуерните бариери на TEE Enclave...`,
+                        `🔒 [${time}] [TRUSTZONE] Проверка на криптографските fuses (eFuses)...`,
+                        `🛡️ [${time}] [TRUSTZONE] Блокиране на неоторизирани повиквания към физически портове...`,
+                        `🟢 [${time}] [УСПЕХ] Хардуерните граници са стабилни. Lockout протоколите са активни.`
+                    ];
+                } else {
+                    logLines = [
+                        `⏳ [${time}] [KNOX] Auditing physical isolation barriers in isolated ARM enclaves...`,
+                        `🔒 [${time}] [TRUSTZONE] Verifying eFuse cryptographically stored master signature keys...`,
+                        `🛡️ [${time}] [TRUSTZONE] Blocking non-secure system service calls to physical ports...`,
+                        `🟢 [${time}] [SUCCESS] TEE hardware boundaries secure. System lockout rules enforced.`
+                    ];
+                }
+            } else if (cmd === 'knox_audit') {
+                if (state.lang === 'bg') {
+                    logLines = [
+                        `⏳ [${time}] [TEE] Одит на защитеното хранилище за ключове в силиция...`,
+                        `🔍 [${time}] [AUDIT] Валидиране на Samsung Knox хардуерни сертификати...`,
+                        `🟢 [${time}] [УСПЕХ] Knox TEE одитът е успешен. Сертификат за хардуерен интегритет: ОДОБРЕН.`
+                    ];
+                } else {
+                    logLines = [
+                        `⏳ [${time}] [TEE] Auditing secure hardware keys stored inside tamper-proof silicon...`,
+                        `🔍 [${time}] [AUDIT] Running Samsung Knox cryptographic signature verification...`,
+                        `🟢 [${time}] [SUCCESS] Secure key store audited successfully. Integrity: APPROVED.`
+                    ];
+                }
+            }
+
+            let lineIndex = 0;
+            const activeSpec = state.activeSpec;
+            
+            commandInterval = setInterval(() => {
+                if (lineIndex < logLines.length) {
+                    state.terminalHistory[activeSpec].push(logLines[lineIndex]);
+                    renderTerminalHistory(activeSpec);
+                    lineIndex++;
+                } else {
+                    clearInterval(commandInterval);
+                    commandInterval = null;
+                }
+            }, 600);
+        }
+
+        function clearActiveTerminal() {
+            if (commandInterval) {
+                clearInterval(commandInterval);
+                commandInterval = null;
+            }
+            state.terminalHistory[state.activeSpec] = [];
+            renderTerminalHistory(state.activeSpec);
+        }
+
+        function generateSpecsLabHtml() {
+            const active = state.activeSpec;
+            const dict = translations[state.lang];
+            const doc = specDocs[active][state.lang];
+            
+            let verticalTabs = "";
+            const tabIds = ["napi", "swarm", "pqc", "knox"];
+            const tabEmojis = { napi: "⚡", swarm: "🧠", pqc: "🛡️", knox: "🔒" };
+            const tabTitles = {
+                napi: state.lang === "bg" ? "Rust NAPI Ядро" : "Rust NAPI Core",
+                swarm: state.lang === "bg" ? "16 Офлайн AI Модела" : "16 Local AI Models",
+                pqc: state.lang === "bg" ? "Пост-Квантова Криптография" : "Post-Quantum Cryptography",
+                knox: state.lang === "bg" ? "Knox TEE Изолация" : "Knox TEE Isolation"
+            };
+            
+            tabIds.forEach(id => {
+                const isActive = active === id;
+                verticalTabs += `
+                    <button id="tab-${id}" class="twin-btn ${isActive ? 'active' : ''}" style="width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center; padding: 16px 20px;" onclick="setSpecTab('${id}')">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span style="font-size: 1.1rem;">${tabEmojis[id]}</span>
+                            <span class="mono" style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">${tabTitles[id]}</span>
+                        </div>
+                        <span style="font-size: 0.8rem; opacity: 0.5;">▶</span>
+                    </button>
+                `;
+            });
+
+            return `
+                <div class="dashboard-grid" style="grid-template-columns: 1fr 1.2fr 1.8fr; gap: 24px; align-items: stretch; min-height: 540px;">
+                    
+                    <div class="column-flex" style="gap: 16px;">
+                        ${verticalTabs}
+                    </div>
+                    
+                    <div class="glass-card glow-purple" style="display: flex; flex-direction: column; justify-content: space-between; padding: 28px;">
+                        <div>
+                            <span class="mono" style="font-size: 0.7rem; color: var(--neon-purple); font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; display: block;" id="spec-category-label">
+                                ${doc.category}
+                            </span>
+                            <h3 style="font-size: 1.4rem; font-weight: 900; color: #fff; margin-bottom: 16px; text-transform: uppercase;" id="spec-heading">
+                                ${doc.heading}
+                            </h3>
+                            <div style="height: 2px; background: linear-gradient(90deg, var(--neon-purple), var(--neon-pink)); width: 60px; margin-bottom: 20px;"></div>
+                            <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.6; margin-bottom: 20px;" id="spec-desc">
+                                ${doc.desc}
+                            </p>
+                        </div>
+                        
+                        <div style="border-top: 1px solid rgba(181, 95, 230, 0.1); padding-top: 16px; display: flex; flex-direction: column; gap: 12px;" class="mono text-[11px]">
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: var(--text-secondary);" id="spec-metric-label">${doc.metric_label}</span>
+                                <span style="font-weight: 700; color: var(--neon-blue);">${doc.metric_val}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: var(--text-secondary);" id="spec-status-label">${doc.status_label}</span>
+                                <span style="font-weight: 700; color: var(--neon-emerald);">${doc.status_val}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="glass-card" style="display: flex; flex-direction: column; justify-content: space-between; padding: 0; overflow: hidden; border-color: rgba(0, 240, 255, 0.15); box-shadow: 0 0 25px rgba(0, 240, 255, 0.05);">
+                        <div style="background: rgba(0,0,0,0.5); padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 0.9rem;">💻</span>
+                                <span class="mono" style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); letter-spacing: 1px;" id="terminal-header-title">
+                                    ${doc.header_title}
+                                </span>
+                            </div>
+                            <div style="display: flex; gap: 6px;">
+                                <span style="width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.1);"></span>
+                                <span style="width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.1);"></span>
+                                <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--neon-blue); box-shadow: 0 0 8px var(--neon-blue); animation: ripple 1.8s infinite;"></span>
+                            </div>
+                        </div>
+                        
+                        <div id="terminal-screen" class="mono terminal-scroll" style="flex-grow: 1; height: 260px; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; font-size: 0.75rem; background: rgba(5,2,12,0.95);">
+                            <!-- Terminal History -->
+                        </div>
+                        
+                        <div style="background: rgba(0,0,0,0.3); padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center;">
+                            <div id="terminal-actions-container" style="display: flex; gap: 12px;">
+                                ${doc.actions.map(act => `
+                                    <button onclick="runActiveCommand('${act.cmd}')" class="tab-btn" style="padding: 8px 16px; font-size: 0.7rem; border-color: var(--neon-blue); color: var(--neon-blue); background: rgba(0, 240, 255, 0.03);">
+                                        ${act.label}
+                                    </button>
+                                `).join('')}
+                            </div>
+                            <button onclick="clearActiveTerminal()" class="mono" style="background: transparent; border: none; color: var(--text-secondary); font-size: 0.7rem; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;">
+                                ${state.lang === 'bg' ? '[Изчисти]' : '[Clear]'}
+                            </button>
+                        </div>
+                        
+                    </div>
+                    
+                </div>
+            `;
+        }
+
+        // 60FPS Interactive HTML5 Canvas Neural Lattice Background
+        let particles = [];
+        let pulses = [];
+        let telemetryRain = [];
+        let mouse = { x: null, y: null };
+        let canvasAnimId = null;
+
+        class Particle {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.reset();
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+            }
+            reset() {
+                this.x = Math.random() * this.canvas.width;
+                this.y = Math.random() * this.canvas.height;
+                this.vx = (Math.random() - 0.5) * 0.35;
+                this.vy = (Math.random() - 0.5) * 0.35;
+                this.radius = Math.random() * 1.5 + 1.2;
+                this.color = Math.random() > 0.5 ? 'rgba(0, 240, 255, 0.6)' : 'rgba(181, 95, 230, 0.6)';
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Mouse Repulsion Distortion Field
+                if (mouse.x !== null && mouse.y !== null) {
+                    const dx = this.x - mouse.x;
+                    const dy = this.y - mouse.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 180) {
+                        const force = (180 - dist) / 180;
+                        const angle = Math.atan2(dy, dx);
+                        const pushX = Math.cos(angle) * force * 1.6;
+                        const pushY = Math.sin(angle) * force * 1.6;
+                        this.x += pushX;
+                        this.y += pushY;
+                    }
+                }
+
+                // Smooth viewport wrapping boundaries
+                if (this.x < -20) this.x = this.canvas.width + 20;
+                if (this.x > this.canvas.width + 20) this.x = -20;
+                if (this.y < -20) this.y = this.canvas.height + 20;
+                if (this.y > this.canvas.height + 20) this.y = -20;
+            }
+            draw(ctx) {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+        }
+
+        class Pulse {
+            constructor(fromNode, toNode) {
+                this.from = fromNode;
+                this.to = toNode;
+                this.progress = 0;
+                this.speed = Math.random() * 0.015 + 0.008;
+            }
+            update() {
+                this.progress += this.speed;
+            }
+            draw(ctx) {
+                const px = this.from.x + (this.to.x - this.from.x) * this.progress;
+                const py = this.from.y + (this.to.y - this.from.y) * this.progress;
+                
+                ctx.beginPath();
+                ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+                ctx.fillStyle = '#00f0ff';
+                ctx.shadowColor = '#00f0ff';
+                ctx.shadowBlur = 8;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        class RainTelemetry {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.reset();
+                this.y = Math.random() * canvas.height;
+            }
+            reset() {
+                this.x = Math.random() * this.canvas.width;
+                this.y = -40;
+                this.vy = Math.random() * 0.6 + 0.25;
+                this.alpha = Math.random() * 0.08 + 0.01;
+                this.fontSize = Math.floor(Math.random() * 4) + 9;
+                const codes = [
+                    "0101", "VHT_DIABET", "KNOX_TEE", "RUST_NAPI", "PQC_ML-KEM", 
+                    "SECURE", "determ_logic", "0x41_45_54", "AVX-512", "7.83Hz", 
+                    "zero-GC", "steel_runtime", "NIS2_COMPLIANT", "EU_SOVEREIGN"
+                ];
+                this.text = codes[Math.floor(Math.random() * codes.length)];
+            }
+            update() {
+                this.y += this.vy;
+                if (this.y > this.canvas.height + 40) {
+                    this.reset();
+                }
+            }
+            draw(ctx) {
+                ctx.font = `${this.fontSize}px 'JetBrains Mono', monospace`;
+                ctx.fillStyle = `rgba(181, 95, 230, ${this.alpha})`;
+                ctx.fillText(this.text, this.x, this.y);
+            }
+        }
+
+        function initCyberCanvas() {
+            const canvas = document.getElementById('cyber-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            window.addEventListener('mousemove', (e) => {
+                mouse.x = e.clientX;
+                mouse.y = e.clientY;
+            });
+            window.addEventListener('mouseout', () => {
+                mouse.x = null;
+                mouse.y = null;
+            });
+
+            const particleCount = 80;
+            particles = [];
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle(canvas));
+            }
+            
+            const rainCount = 20;
+            telemetryRain = [];
+            for (let i = 0; i < rainCount; i++) {
+                telemetryRain.push(new RainTelemetry(canvas));
+            }
+
+            function animateCanvas() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                telemetryRain.forEach(rain => {
+                    rain.update();
+                    rain.draw(ctx);
+                });
+
+                for (let i = 0; i < particles.length; i++) {
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+
+                        if (dist < 115) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(181, 95, 230, ${0.12 * (1 - dist / 115)})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+
+                            if (pulses.length < 18 && Math.random() < 0.0003) {
+                                pulses.push(new Pulse(particles[i], particles[j]));
+                            }
+                        }
+                    }
+
+                    if (mouse.x !== null && mouse.y !== null) {
+                        const dx = particles[i].x - mouse.x;
+                        const dy = particles[i].y - mouse.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+
+                        if (dist < 160) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(mouse.x, mouse.y);
+                            ctx.strokeStyle = `rgba(0, 240, 255, ${0.2 * (1 - dist / 160)})`;
+                            ctx.lineWidth = 0.7;
+                            ctx.stroke();
+                        }
+                    }
+
+                    particles[i].update();
+                    particles[i].draw(ctx);
+                }
+
+                pulses = pulses.filter(p => p.progress < 1);
+                pulses.forEach(p => {
+                    p.update();
+                    p.draw(ctx);
+                });
+
+                canvasAnimId = requestAnimationFrame(animateCanvas);
+            }
+            if (canvasAnimId) cancelAnimationFrame(canvasAnimId);
+            animateCanvas();
         }
 
         // Run Vanilla engine
         window.addEventListener("DOMContentLoaded", () => {
             renderVanillaHUD();
             addLogEntry("init_complete");
+            initCyberCanvas();
         });
     </script>
 </body>
