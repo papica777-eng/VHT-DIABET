@@ -360,6 +360,7 @@
     <script>
         // System state logic
         let state = {
+            lang: "bg", // "bg" | "en"
             activeTwin: "metabolic", // "metabolic" | "neurological" | "cardiovascular" | "longevity"
             activeTab: "dashboard",   // "dashboard" | "cohort" | "pillars"
             curedStates: {
@@ -400,9 +401,9 @@
             },
             
             logs: [
-                "[12:12:00] INIT: AETERNA VHT core online. Knox offline sandbox engaged.",
-                "[12:12:01] INGEST: Loaded 900 patient twins from Bulgaria national registry.",
-                "[12:12:02] TELEMETRY: Multi-scale biological systems loaded and ready."
+                { time: "12:12:00", key: "init" },
+                { time: "12:12:01", key: "ingest" },
+                { time: "12:12:02", key: "telemetry" }
             ]
         };
 
@@ -480,10 +481,471 @@
             ]
         };
 
-        function addLogEntry(msg) {
+        const translations = {
+            bg: {
+                neuralLink: "NEURAL LINK:",
+                knoxHeartbeat: "KNOX HEARTBEAT:",
+                footer: "AETERNA v5.0 Substrate // ZERO-ENTROPY BIOLOGICAL CURE PROTOCOL // 2026",
+                emergencyBanner: "⚠️ EMERGENCY LOCAL MODE ACTIVE // NEURAL LINK SEVERED",
+                emergencyText: "Системата премина в авариен офлайн режим. Всички медицински команди се подписват хардуерно от **Knox TEE** директно на силиция на Ryzen 7000, блокирайки аномални дозировки.",
+                twins: {
+                    metabolic: "🩺 Метаболитен VHT v4.0",
+                    neurological: "🧠 Неврологичен VHT v5.0",
+                    cardiovascular: "🫀 Кардиоваскуларен VHT v5.0",
+                    longevity: "🧬 Дълголетие & Сенесценция"
+                },
+                tabs: {
+                    dashboard: "📊 Научен Панел (Лекари)",
+                    cohort: "👥 Кохортно Изследване (900 Близнаци)",
+                    pillars: "🛡️ Трите Стълба на Сигурност"
+                },
+                controls: {
+                    induce: "🧬 ИНДУЦИРАНЕ НА БИОЛОГИЧЕН РЕСТАРТ",
+                    reset: "♻️ ВЪЗСТАНОВЯВАНЕ НА ХАОСА"
+                },
+                dashboard: {
+                    title: {
+                        metabolic: "🧬 Гликемична траектория на Ден 2 (Steady-State)",
+                        neurological: "🧠 Разпад на Амилоидните Протофибрили (Lecanemab)",
+                        cardiovascular: "🫀 Хемодинамика и Коронарен Ток",
+                        longevity: "🧬 Клетъчно подмладяване и Митохондриален контрол"
+                    },
+                    desc: {
+                        metabolic: "Метаболитна крива на пациент P-402 при симулация. Зелената зона е клиничната норма.",
+                        neurological: "Моделиране на кинетиката на разпада на Amyloid-beta и регенерация на синаптичния трансдюсер.",
+                        cardiovascular: "Коронарна хемодинамика при остра исхемична криза. Моделиране на съдово съпротивление и прединфарктна телеметрия.",
+                        longevity: "Horvath Епигенетичен часовник и редукция на митохондриалната ентропия чрез насочен автоложен трансфер."
+                    },
+                    entropy: "SYSTEM ENTROPY",
+                    patientCard: "ℹ️ Описание на Пациента",
+                    patient: "ПАЦИЕНТ:",
+                    patientVal: {
+                        metabolic: "P-402 (Педиатричен)",
+                        neurological: "N-807 (Alzheimer-Family)",
+                        cardiovascular: "C-209 (Heart Failure NYHA IV)",
+                        longevity: "L-001 (Сенилен статус)"
+                    },
+                    ageWeight: "ВЪЗРАСТ / ТЕГЛО:",
+                    ageWeightVal: {
+                        metabolic: "9 години / 32 кг",
+                        neurological: "72 години / 64 кг",
+                        cardiovascular: "68 години / 82 кг",
+                        longevity: "74 години / 71 кг"
+                    },
+                    condition: "СЪСТОЯНИЕ / ГЕНЕТИКА:",
+                    conditionVal: {
+                        metabolic: "SEVERE_PANCREATIC_ATROPHY",
+                        neurological: "APOE ε4/ε4 Homozygous",
+                        cardiovascular: "ACUTE ISCHEMIA (2.45 mm ST-elevation)",
+                        longevity: "EPIGENETIC_DECAY_HAYFLICK_LIMIT"
+                    },
+                    activeInsulin: "АКТИВЕН ИНСУЛИН:",
+                    activeLecanemab: "АКТИВНО ЛЕЧЕНИЕ:",
+                    activeDigoxin: "АРТЕРИАЛНО НАЛЯГАНЕ:",
+                    activeDasatinib: "c-Myc ОНКОГЕНЕН ШИЛД:",
+                    therapyVal: {
+                        metabolic: "4.50 U (Външна помпа)",
+                        neurological: "Lecanemab (Инфузия 10mg/kg)",
+                        cardiovascular: "185/115 mmHg (Критично)",
+                        longevity: "SECURED (0.00% Expression)"
+                    },
+                    extraParam: {
+                        metabolicLabel: "ИНСУЛИН РЕГУЛАЦИЯ:",
+                        metabolicVal: "0.00 U (Автоложна регулация)",
+                        neurologicalLabel: "CATUSKOTI СЪСТОЯНИЕ:",
+                        neurologicalVal: "UBHAYAM (Парадокс / MCI)",
+                        neurologicalCuredVal: "ANUBHAYAM (Трансцендентност)",
+                        cardiovascularLabel: "ЕКТОПИЧНА МАЗНИНА:",
+                        cardiovascularVal: "Коефициент 1.35",
+                        longevityLabel: "SASP ВЪЗПАЛЕНИЕ:",
+                        longevityVal: "IL-6: 14.80 pg/mL (Токсично)",
+                        longevityCuredVal: "IL-6: 1.05 pg/mL (Базово)"
+                    },
+                    extraParamTitle: {
+                        neurological: "ГЕНЕТИЧЕН ПРОФИЛ:",
+                        cardiovascular: "АРТЕРИАЛНО НАЛЯГАНЕ:",
+                        longevity: "YAMANAKA OSK ИНДУКЦИЯ:",
+                        longevityCuredVal: "ACTIVE (Oct4/Sox2/Klf4)",
+                        longevityVal: "OFFLINE",
+                        cardiovascularCured: "120/80 mmHg (Оптимално)",
+                        cardiovascularCuredEKG: "NORMAL (0.00 mm elevation)",
+                        cardiovascularLabelEKG: "ЕКГ АНАЛИЗ (ST):"
+                    },
+                    conclusionTitle: "🔬 КЛИНИЧЕН ИЗВОД:",
+                    conclusionVal: {
+                        metabolic: "Пациентът е в хаотична метаболитна декомпенсация с абсолютен инсулинов дефицит. Индуцирайте биологичния рестарт чрез централния бутон за регенерация.",
+                        neurological: "Пациентът е в състояние UBHAYAM (MCI парадокс) с агресивно натрупване на тау нишки. Необходим е незабавен рестарт и пробиване на когнитивната ентропия.",
+                        cardiovascular: "ПАЦИЕНТЪТ Е В ОСТРА КАРДИО-ИСХЕМИЧНА КРИЗА! 94.50% риск от инфаркт в следващите 45 минути на база ЕКГ ST-елевация. Незабавно индицирайте съдовата стабилизация.",
+                        longevity: "Клетките са достигнали Hayflick лимита с критично къси теломери (4.80 kbp). Митохондриалната ентропия е критична (65% мутационен товар на mtDNA), което блокира клетъчното дишане. Изпълнете спешния биологичен рестарт.",
+                        curedMetabolic: "Появата на ендогенен C-пептид (0.90 nmol/L) в съчетание с пълно възстановяване на инсулиновата чувствителност (HOMA-IR = 1.0) бележи успешна Pax4-индуцирана бета-клетъчна регенерация и автологична терапия.",
+                        curedNeurological: "Молоклоналното антитяло успешно се е свързало с разтворимите протофибрили. CSF Amyloid-Beta е изчистен до 2.10 pg/mL, а Catuskoti оракулът премина към ANUBHAYAM с възстановена когниция (MMSE = 28).",
+                        curedCardiovascular: "Коронарната съдова проходимост е възстановена. LVEF е нормализиран на 62% чрез редукция на съпротивлението до 1.00. 60-минутният прединфарктен оракул показва стабилно ниво на сигурност (1.20% риск).",
+                        curedLongevity: "Сенолитичното прочистване с D+Q елиминира токсичните зомби клетки до 1.50%. Насоченият автоложен трансфер на здрави митохондрии сведе mtDNA мутационния товар до 5.0%, нормализирайки ATP производството. Частичният Yamanaka OSK протокол безопасно намали биологичната възраст до 32.0 години."
+                    },
+                    telemetryLog: "📟 LIVE_SUBSTRATE_TELEMETRY_LOG",
+                    glucose: "Глюкоза (Glucose)",
+                    glucoseNorm: "Норма: 4.5 - 6.0 mmol/L",
+                    cPeptide: "Ендогенен C-Пептид",
+                    cPeptideNorm: "Норма: 0.26 - 1.39 nmol/L",
+                    homaIr: "HOMA-IR Индекс",
+                    homaIrNorm: "Норма: &lt; 1.0 (Сензитивност)",
+                    amyloid: "CSF Amyloid-Beta 42",
+                    amyloidNorm: "Норма: &lt; 15 pg/mL (чист мозък)",
+                    tau: "CSF Phosphorylated Tau",
+                    tauNorm: "Норма: &lt; 8 pg/mL (стабилен)",
+                    mmse: "Когнитивен MMSE Индекс",
+                    mmseNorm: "Норма: 27 - 30 (Здрав ум)",
+                    resistance: "Съдово съпротивление",
+                    resistanceNorm: "Норма: 0.8 - 1.5 dyn·s/cm⁵",
+                    lvef: "Изтласкаща фракция (LVEF)",
+                    lvefNorm: "Норма: 55% - 70% (EF)",
+                    infarctProb: "Вероятност за инфаркт (60m)",
+                    infarctProbNorm: "Норма: &lt; 2.0% (Нисък риск)",
+                    epigeneticAge: "Биологична възраст (Horvath)",
+                    epigeneticAgeNorm: "Хронологична: 74.5 години",
+                    zombiePct: "Сенесцентни (Zombie) клетки",
+                    zombiePctNorm: "Норма: &lt; 2.0% (Млади тъкани)",
+                    telomere: "Теломерна дължина (qPCR)",
+                    telomereNorm: "Критичен Hayflick: 5.00 kbp",
+                    mitochondrialEntropy: "Митохондриална Ентропия",
+                    mitochondrialEntropyNorm: "Критичен mtDNA: &gt; 35%",
+                    labelX: "Времеви интервал (24 часа)"
+                },
+                cohort: {
+                    title: {
+                        metabolic: "👥 Сравнителен кохортен екран (900 виртуални близнаци)",
+                        neurological: "👥 Кохортно изследване (Амилоидна тежест & MMSE)",
+                        cardiovascular: "👥 Хемодинамични кохортни симулации (NYHA Class)",
+                        longevity: "👥 Епигенетично подмладяване и Rejuvenation Cohort"
+                    },
+                    desc: {
+                        metabolic: "Скалиране на автоложното излекуване v4.0 върху цялата извадка на Националния регистър за 2015 г.",
+                        neurological: "Ефикасност на Lecanemab при свиване на когнитивната ентропия при 900 виртуални симулации.",
+                        cardiovascular: "1-годишен превантивен ефект на съдова проходимост и LVEF регенерация.",
+                        longevity: "Horvath Epigenetic Clock проследяване след Yamanaka OSK факторен трансфер."
+                    },
+                    headers: {
+                        metabolic: ["Възрастова Група", "Брой близнаци", "Базов TIR (2015)", "Конвенционален TIR", "VHT v3.0 TIR", "v4.0 Биологичен TIR", "Базови Хипогликемии", "v4.0 Хипогликемии"],
+                        neurological: ["Възраст / Стадий", "Брой пациенти", "Базов MMSE", "Конвенционално лечение", "Терапевтичен рестарт", "Прогнозна ефикасност", "Свиване на ентропията"],
+                        cardiovascular: ["NYHA Група", "Брой пациенти", "Базов LVEF", "Конвенционална терапия", "VHT v3.0 Регенерация", "v5.0 Оптимален LVEF", "Възстановяване на толеранс"],
+                        longevity: ["Възрастова Група", "Брой пациенти", "Базов биологичен статус", "Сенолитично прочистване", "Epigenetic Reversal", "Биологична норма (v5.0)", "Lifespan Extension"]
+                    },
+                    groups: {
+                        "0-14 (Педиатричен)": "0-14 (Педиатричен)",
+                        "15-44 (Младежка възраст)": "15-44 (Младежка възраст)",
+                        "45-59 (Средна възраст)": "45-59 (Средна възраст)",
+                        "60-74 (Зряла възраст)": "60-74 (Зряла възраст)",
+                        "75-89 (Старческа възраст)": "75-89 (Старческа възраст)",
+                        "90+ (Дълголетници)": "90+ (Дълголетници)",
+                        "55-64 (Ранен стадий)": "55-64 (Ранен стадий)",
+                        "65-74 (Умерен Алцхаймер)": "65-74 (Умерен Алцхаймер)",
+                        "75-84 (Тежък Алцхаймер)": "75-84 (Тежък Алцхаймер)",
+                        "85+ (Късен стадий)": "85+ (Късен стадий)",
+                        "40-54 (Хипертоници)": "40-54 (Хипертоници)",
+                        "55-69 (NYHA Class II)": "55-69 (NYHA Class II)",
+                        "70-84 (NYHA Class III)": "70-84 (NYHA Class III)",
+                        "85+ (NYHA Class IV)": "85+ (NYHA Class IV)",
+                        "50-59 (Биологична възраст)": "50-59 (Биологична възраст)",
+                        "60-69 (Биологична възраст)": "60-69 (Биологична възраст)",
+                        "70-79 (Биологична възраст)": "70-79 (Биологична възраст)",
+                        "80+ (Биологична възраст)": "80+ (Биологична възраст)"
+                    },
+                    yearsSuffix: " години",
+                    curedRestored: "100% Възстановена"
+                },
+                pillars: {
+                    headers: ["СТЪЛБ 1", "СТЪЛБ 2", "СТЪЛБ 3"],
+                    titles: ["Фармакотерапевтичен Дозов Щит", "Диететичен & Хидратационен Контрол", "Физическа Активност"],
+                    codeTitle: "💻 Физиологичен код на безопасност (SOUL Safety Gate)",
+                    metabolic: [
+                        "Математическа защита блокира опасни дози при концентрирани форми на прандиален инсулин (U-200, U-300) без съответна механична калибрация.",
+                        "Превантивно 15% намаление на въглехидратния коефициент (ICR) сутрин за блокиране на Dawn Phenomenon кортизоловата резистентност.",
+                        "Моделиране на GLUT4 транслокацията при аеробни спортове. Превантивно 30% до 50% свиване на болуса за предотвратяване на хипогликемии."
+                    ],
+                    neurological: [
+                        "Label Verification Gate изисква GFR бъбречно филтриране и Knox биометричен подпис преди Lecanemab за спиране на ARIA-E едема.",
+                        "Калибриране към кетогенна невропротекция, осигуряваща ATP кетонови тела (B-hydroxybutyrate) за заобикаляне на глюкозния дефект.",
+                        "Спортният коефициент се координира с Паркинсон тремор. Над 0.70 tremor index, тежката дейност се блокира за сигурност."
+                    ],
+                    cardiovascular: [
+                        "Индивидуален фармакотерапевтичен дозов филтър на база бъбречен клирънс (GFR) за кардиотоници (Digoxin) и антикоагуланти (Warfarin).",
+                        "DASH/Ниско-натриева диета с нива на натрий строго < 1500mg за предотвратяване на белодробен едем при NYHA Class III/IV.",
+                        "Спортен лимит (Sports Cardiac Cap): При ниска изтласкаща фракция (LVEF < 35%) или NYHA >= 3, спортната активност се блокира."
+                    ],
+                    longevity: [
+                        "Фармакотерапевтичен щит за сенолитична терапия с Dasatinib. Пълно блокиране при силна неутропения (Neutrophils < 1.5 * 10⁹/L).",
+                        "Калорична рестрикция и NAD+ прекурсори, активиращи SIRT1 и SIRT3 сиртуините за потискане на NLRP3 инфламазома.",
+                        "Спортен теломерен фактор: Аеробното натоварване подобрява теломеразната активност (hTERT) и предпазва теломерната дължина."
+                    ]
+                },
+                logMessages: {
+                    init: "INIT: AETERNA VHT ядрото е онлайн. Knox офлайн пясъчник стартиран.",
+                    ingest: "INGEST: Заредени са 900 пациентски близнака от националния регистър на България.",
+                    telemetry: "TELEMETRY: Многомащабните биологични системи са заредени и готови.",
+                    init_complete: "🟢 Инициализацията за самовъзстановяване завърши. Офлайн режимът е напълно активен.",
+                    emergency_severed: "🚨 NEURAL LINK: SEVERED. Превключване в Emergency_Local_Mode!",
+                    knox_isolation: "🔒 KNOX TEE: Активирана локална изолация на жизненоважните параметри.",
+                    neural_restored: "🟢 NEURAL LINK: RESTORED. Knox Heartbeat синхронизиран.",
+                    switch_metabolic: "🔄 Превключване към: METABOLIC Virtual Human Twin.",
+                    switch_neurological: "🔄 Превключване към: NEUROLOGICAL Virtual Human Twin.",
+                    switch_cardiovascular: "🔄 Превключване към: CARDIOVASCULAR Virtual Human Twin.",
+                    switch_longevity: "🔄 Превключване към: LONGEVITY & Senescence Virtual Human Twin.",
+                    metabolic_init: "🧬 ИНИЦИРАНЕ НА БИОЛОГИЧНО ИЗЛЕКУВАНЕ...",
+                    metabolic_transform: "[ТРАНСФОРМАЦИЯ]: Pax4 бета-клетъчен регенеративен отговор...",
+                    metabolic_cured: "🏆 БИОЛОГИЧНО ИЗЛЕКУВАНЕ: 100% TIR УСПЕШНО ВАЛИДИРАНО.",
+                    neurological_init: "🧠 ИНИЦИРАНЕ НА НЕВРОПРОТЕКТИВНО ИЗЧИСТВАНЕ...",
+                    neurological_transform: "[CATUSKOTI]: Премахване на амилоид-бета плаки и синаптична регенерация...",
+                    neurological_cured: "🏆 НЕВРОДЕГЕНЕРАТИВЕН ЩИТ: Когнитивната ентропия е успешно свита.",
+                    cardiovascular_init: "🫀 ИНИЦИРАНЕ НА СЪДОВА РЕСТАВРАЦИЯ...",
+                    cardiovascular_transform: "[ХЕМОДИНАМИКА]: Разтваряне на липидни плаки и LVEF подобряване...",
+                    cardiovascular_cured: "🏆 КАРДИОВАСКУЛАРЕН ЩИТ: Хемодинамиката е в норма. Риск = 1.2%.",
+                    longevity_init: "🧬 ИНИЦИРАНЕ НА ЕПИГЕНЕТИЧНО ПОДМЛАДЯВАНЕ...",
+                    longevity_transform: "[YAMANAKA OSK]: Частично транскрипционно репрограмиране без c-Myc...",
+                    longevity_cured: "🏆 КЛЕТЪЧНА РЕГЕНЕРАЦИЯ: Биологичната възраст се върна до норма.",
+                    metabolic_reset: "♻️ Нулиране на метаболитните параметри към некомпенсиран хаос.",
+                    neurological_reset: "♻️ Нулиране на невроналните нива към неконтролирана протеинова агрегация.",
+                    cardiovascular_reset: "♻️ Нулиране на съдовите хемодинамики към остра исхемична криза.",
+                    longevity_reset: "♻️ Нулиране на клетъчната био-възраст към напреднало стареене (Hayflick риск)."
+                }
+            },
+            en: {
+                neuralLink: "NEURAL LINK:",
+                knoxHeartbeat: "KNOX HEARTBEAT:",
+                footer: "AETERNA v5.0 Substrate // ZERO-ENTROPY BIOLOGICAL CURE PROTOCOL // 2026",
+                emergencyBanner: "⚠️ EMERGENCY LOCAL MODE ACTIVE // NEURAL LINK SEVERED",
+                emergencyText: "System has switched to emergency offline mode. All medical commands are hardware-signed by **Knox TEE** directly on Ryzen 7000 silicon, blocking anomalous dosages.",
+                twins: {
+                    metabolic: "🩺 Metabolic VHT v4.0",
+                    neurological: "🧠 Neurological VHT v5.0",
+                    cardiovascular: "🫀 Cardiovascular VHT v5.0",
+                    longevity: "🧬 Longevity & Senescence"
+                },
+                tabs: {
+                    dashboard: "📊 Scientific Panel (Physicians)",
+                    cohort: "👥 Cohort Study (900 Twins)",
+                    pillars: "🛡️ Three Pillars of Safety"
+                },
+                controls: {
+                    induce: "🧬 INDUCE BIOLOGICAL REVERSAL",
+                    reset: "♻️ RESTORE CHAOS"
+                },
+                dashboard: {
+                    title: {
+                        metabolic: "🧬 Glycemic Trajectory on Day 2 (Steady-State)",
+                        neurological: "🧠 Amyloid Protofibril Dissociation (Lecanemab)",
+                        cardiovascular: "🫀 Hemodynamics and Coronary Flow",
+                        longevity: "🧬 Cellular Rejuvenation & Mitochondrial Control"
+                    },
+                    desc: {
+                        metabolic: "Metabolic curve of patient P-402 during simulation. The green zone is the clinical norm.",
+                        neurological: "Modeling kinetics of Amyloid-beta dissociation and regeneration of the synaptic transducer.",
+                        cardiovascular: "Coronary hemodynamics during acute ischemic crisis. Modeling vascular resistance and pre-infarction telemetry.",
+                        longevity: "Horvath Epigenetic Clock tracking and reduction of mitochondrial entropy via targeted autologous transfer."
+                    },
+                    entropy: "SYSTEM ENTROPY",
+                    patientCard: "ℹ️ Patient Profile",
+                    patient: "PATIENT:",
+                    patientVal: {
+                        metabolic: "P-402 (Pediatric)",
+                        neurological: "N-807 (Alzheimer-Family)",
+                        cardiovascular: "C-209 (Heart Failure NYHA IV)",
+                        longevity: "L-001 (Senile status)"
+                    },
+                    ageWeight: "AGE / WEIGHT:",
+                    ageWeightVal: {
+                        metabolic: "9 years / 32 kg",
+                        neurological: "72 years / 64 kg",
+                        cardiovascular: "68 years / 82 kg",
+                        longevity: "74 years / 71 kg"
+                    },
+                    condition: "CONDITION / GENETICS:",
+                    conditionVal: {
+                        metabolic: "SEVERE_PANCREATIC_ATROPHY",
+                        neurological: "APOE ε4/ε4 Homozygous",
+                        cardiovascular: "ACUTE ISCHEMIA (2.45 mm ST-elevation)",
+                        longevity: "EPIGENETIC_DECAY_HAYFLICK_LIMIT"
+                    },
+                    activeInsulin: "ACTIVE INSULIN:",
+                    activeLecanemab: "ACTIVE TREATMENT:",
+                    activeDigoxin: "BLOOD PRESSURE:",
+                    activeDasatinib: "c-Myc ONCOGENIC SHIELD:",
+                    therapyVal: {
+                        metabolic: "4.50 U (External pump)",
+                        neurological: "Lecanemab (Infusion 10mg/kg)",
+                        cardiovascular: "185/115 mmHg (Critical)",
+                        longevity: "SECURED (0.00% Expression)"
+                    },
+                    extraParam: {
+                        metabolicLabel: "INSULIN REGULATION:",
+                        metabolicVal: "0.00 U (Autologous regulation)",
+                        neurologicalLabel: "CATUSKOTI STATUS:",
+                        neurologicalVal: "UBHAYAM (Paradox / MCI)",
+                        neurologicalCuredVal: "ANUBHAYAM (Transcendence)",
+                        cardiovascularLabel: "ECTOPIC ADIPOSE:",
+                        cardiovascularVal: "Coefficient 1.35",
+                        longevityLabel: "SASP INFLAMMATION:",
+                        longevityVal: "IL-6: 14.80 pg/mL (Toxic)",
+                        longevityCuredVal: "IL-6: 1.05 pg/mL (Baseline)"
+                    },
+                    extraParamTitle: {
+                        neurological: "GENETIC PROFILE:",
+                        cardiovascular: "BLOOD PRESSURE:",
+                        longevity: "YAMANAKA OSK INDUCTION:",
+                        longevityCuredVal: "ACTIVE (Oct4/Sox2/Klf4)",
+                        longevityVal: "OFFLINE",
+                        cardiovascularCured: "120/80 mmHg (Optimal)",
+                        cardiovascularCuredEKG: "NORMAL (0.00 mm elevation)",
+                        cardiovascularLabelEKG: "ECG ANALYSIS (ST):"
+                    },
+                    conclusionTitle: "🔬 CLINICAL DECISION:",
+                    conclusionVal: {
+                        metabolic: "The patient is in chaotic metabolic decompensation with absolute insulin deficiency. Induce biological reversal via the central regeneration button.",
+                        neurological: "The patient is in UBHAYAM status (MCI paradox) with aggressive tau accumulation. Immediate restart and cognitive entropy reduction required.",
+                        cardiovascular: "PATIENT IS IN ACUTE CARDIO-ISCHEMIC CRISIS! 94.50% risk of infarction within next 45 minutes based on ECG ST-elevation. Induce vascular stabilization immediately.",
+                        longevity: "Cells have reached the Hayflick limit with critically short telomeres (4.80 kbp). Mitochondrial entropy is critical (65% mtDNA mutation load), blocking cellular respiration. Execute urgent biological restart.",
+                        curedMetabolic: "Appearance of endogenous C-peptide (0.90 nmol/L) combined with complete restoration of insulin sensitivity (HOMA-IR = 1.0) marks successful Pax4-induced beta-cell regeneration and autologous therapy.",
+                        curedNeurological: "Monoclonal antibody successfully bound to soluble protofibrils. CSF Amyloid-Beta cleared to 2.10 pg/mL, and Catuskoti oracle shifted to ANUBHAYAM with restored cognition (MMSE = 28).",
+                        curedCardiovascular: "Coronary vascular patency has been restored. LVEF normalized to 62% by reducing resistance to 1.00. The 60-minute pre-infarction oracle shows a stable security level (1.20% risk).",
+                        curedLongevity: "D+Q senolytic clearing eliminated toxic zombie cells to 1.50%. Targeted autologous transfer of healthy mitochondria reduced mtDNA mutation load to 5.0%, normalizing ATP production. Partial Yamanaka OSK protocol safely reduced biological age to 32.0 years."
+                    },
+                    telemetryLog: "📟 LIVE_SUBSTRATE_TELEMETRY_LOG",
+                    glucose: "Glucose Level",
+                    glucoseNorm: "Normal: 4.5 - 6.0 mmol/L",
+                    cPeptide: "Endogenous C-Peptide",
+                    cPeptideNorm: "Normal: 0.26 - 1.39 nmol/L",
+                    homaIr: "HOMA-IR Index",
+                    homaIrNorm: "Normal: &lt; 1.0 (Sensitivity)",
+                    amyloid: "CSF Amyloid-Beta 42",
+                    amyloidNorm: "Normal: &lt; 15 pg/mL (clear brain)",
+                    tau: "CSF Phosphorylated Tau",
+                    tauNorm: "Normal: &lt; 8 pg/mL (stable cytoskeleton)",
+                    mmse: "Cognitive MMSE Index",
+                    mmseNorm: "Normal: 27 - 30 (Healthy mind)",
+                    resistance: "Systemic Vascular Resistance",
+                    resistanceNorm: "Normal: 0.8 - 1.5 dyn·s/cm⁵",
+                    lvef: "Ejection Fraction (LVEF)",
+                    lvefNorm: "Normal: 55% - 70% (EF)",
+                    infarctProb: "Infarction Probability (60m)",
+                    infarctProbNorm: "Normal: &lt; 2.0% (Low Risk)",
+                    epigeneticAge: "Biological Age (Horvath)",
+                    epigeneticAgeNorm: "Chronological: 74.5 years",
+                    zombiePct: "Senescent (Zombie) Cells",
+                    zombiePctNorm: "Normal: &lt; 2.0% (Young tissues)",
+                    telomere: "Telomere Length (qPCR)",
+                    telomereNorm: "Critical Hayflick: 5.00 kbp",
+                    mitochondrialEntropy: "Mitochondrial Entropy",
+                    mitochondrialEntropyNorm: "Critical mtDNA: &gt; 35%",
+                    labelX: "Time interval (24 hours)"
+                },
+                cohort: {
+                    title: {
+                        metabolic: "👥 Comparative Cohort Panel (900 Virtual Twins)",
+                        neurological: "👥 Cohort Study (Amyloid Burden & MMSE)",
+                        cardiovascular: "👥 Hemodynamic Cohort Simulations (NYHA Class)",
+                        longevity: "👥 Epigenetic Rejuvenation & Rejuvenation Cohort"
+                    },
+                    desc: {
+                        metabolic: "Scaling of autologous recovery v4.0 on the entire 2015 National Register sample.",
+                        neurological: "Efficacy of Lecanemab in collapsing cognitive entropy across 900 virtual simulations.",
+                        cardiovascular: "1-year preventative effect of vascular patency and LVEF regeneration.",
+                        longevity: "Horvath Epigenetic Clock tracking post-Yamanaka OSK factor transfer."
+                    },
+                    headers: {
+                        metabolic: ["Age Group", "Twins Count", "Baseline TIR (2015)", "Conventional TIR", "VHT v3.0 TIR", "v4.0 Biological TIR", "Baseline Hypoglycemias", "v4.0 Hypoglycemias"],
+                        neurological: ["Age / Stage", "Patients Count", "Baseline MMSE", "Conventional Tx", "Therapeutic Restart", "Projected Efficacy", "Entropy Collapse"],
+                        cardiovascular: ["NYHA Group", "Patients Count", "Baseline LVEF", "Conventional Tx", "VHT v3.0 Regen", "v5.0 Optimal LVEF", "Tolerance Recovery"],
+                        longevity: ["Age Group", "Patients Count", "Baseline Bio Status", "Senolytic Purge", "Epigenetic Reversal", "Biological Norm (v5.0)", "Lifespan Extension"]
+                    },
+                    groups: {
+                        "0-14 (Педиатричен)": "0-14 (Pediatric)",
+                        "15-44 (Младежка възраст)": "15-44 (Youth)",
+                        "45-59 (Средна възраст)": "45-59 (Middle Age)",
+                        "60-74 (Зряла възраст)": "60-74 (Mature)",
+                        "75-89 (Старческа възраст)": "75-89 (Elderly)",
+                        "90+ (Дълголетници)": "90+ (Centenarians)",
+                        "55-64 (Ранен стадий)": "55-64 (Early Stage)",
+                        "65-74 (Умерен Алцхаймер)": "65-74 (Moderate Alzheimer)",
+                        "75-84 (Тежък Алцхаймер)": "75-84 (Severe Alzheimer)",
+                        "85+ (Късен стадий)": "85+ (Late Stage)",
+                        "40-54 (Хипертоници)": "40-54 (Hypertensives)",
+                        "55-69 (NYHA Class II)": "55-69 (NYHA Class II)",
+                        "70-84 (NYHA Class III)": "70-84 (NYHA Class III)",
+                        "85+ (NYHA Class IV)": "85+ (NYHA Class IV)",
+                        "50-59 (Биологична възраст)": "50-59 (Biological Age)",
+                        "60-69 (Биологична възраст)": "60-69 (Biological Age)",
+                        "70-79 (Биологична възраст)": "70-79 (Biological Age)",
+                        "80+ (Биологична възраст)": "80+ (Biological Age)"
+                    },
+                    yearsSuffix: " years",
+                    curedRestored: "100% Restored"
+                },
+                pillars: {
+                    headers: ["PILLAR 1", "PILLAR 2", "PILLAR 3"],
+                    titles: ["Pharmacotherapy Dosage Shield", "Dietary & Hydration Control", "Physical Activity"],
+                    codeTitle: "💻 Physiological Safety Code (SOUL Safety Gate)",
+                    metabolic: [
+                        "Mathematical safeguard blocks dangerous doses for concentrated prandial insulin forms (U-200, U-300) without matching physical calibration.",
+                        "Preventative 15% reduction in carbohydrate ratio (ICR) in the morning to block Dawn Phenomenon cortisol resistance.",
+                        "Modeling GLUT4 translocation during aerobic sports. Preventative 30% to 50% bolus reduction to mitigate hypoglycemias."
+                    ],
+                    neurological: [
+                        "Label Verification Gate requires GFR renal clearance and Knox biometric signature before Lecanemab to prevent ARIA-E edema.",
+                        "Calibration towards ketogenic neuroprotection, supplying ATP ketone bodies (B-hydroxybutyrate) to bypass glucose deficits.",
+                        "Sports coefficient coordinated with Parkinson tremor. Over 0.70 tremor index, strenuous activity is blocked for safety."
+                    ],
+                    cardiovascular: [
+                        "Individualized pharmacotherapeutic dosage filter based on renal clearance (GFR) for cardiotonics (Digoxin) and anticoagulants (Warfarin).",
+                        "DASH/Low-sodium diet with sodium levels strictly < 1500mg to prevent pulmonary edema in NYHA Class III/IV.",
+                        "Sports Cardiac Cap: Under low ejection fraction (LVEF < 35%) or NYHA >= 3, strenuous physical activity is blocked."
+                    ],
+                    longevity: [
+                        "Pharmacotherapeutic shield for senolytic therapy with Dasatinib. Complete blockade under severe neutropenia (Neutrophils < 1.5 * 10⁹/L).",
+                        "Caloric restriction and NAD+ precursors, activating SIRT1 and SIRT3 sirtuins to suppress the NLRP3 inflammasome.",
+                        "Sports telomeric factor: Aerobic exercise enhances telomerase activity (hTERT) and preserves telomeric length."
+                    ]
+                },
+                logMessages: {
+                    init: "INIT: AETERNA VHT core online. Knox offline sandbox engaged.",
+                    ingest: "INGEST: Loaded 900 patient twins from Bulgaria national registry.",
+                    telemetry: "TELEMETRY: Multi-scale biological systems loaded and ready.",
+                    init_complete: "🟢 Self-Healing initialization complete. Offline Mode fully active.",
+                    emergency_severed: "🚨 NEURAL LINK: SEVERED. Switching to Emergency Local Mode!",
+                    knox_isolation: "🔒 KNOX TEE: Local sandbox isolation of vital parameters active.",
+                    neural_restored: "🟢 NEURAL LINK: RESTORED. Knox Heartbeat synchronized.",
+                    switch_metabolic: "🔄 Switched to: METABOLIC Virtual Human Twin.",
+                    switch_neurological: "🔄 Switched to: NEUROLOGICAL Virtual Human Twin.",
+                    switch_cardiovascular: "🔄 Switched to: CARDIOVASCULAR Virtual Human Twin.",
+                    switch_longevity: "🔄 Switched to: LONGEVITY & Senescence Virtual Human Twin.",
+                    metabolic_init: "🧬 INITIATING BIOLOGICAL RECOVERY...",
+                    metabolic_transform: "[TRANSFORMATION]: Pax4 beta-cell regenerative response...",
+                    metabolic_cured: "🏆 BIOLOGICAL RECOVERY: 100% TIR SUCCESSFUL VALIDATION.",
+                    neurological_init: "🧠 INITIATING NEUROPROTECTIVE CLEARANCE...",
+                    neurological_transform: "[CATUSKOTI]: Clearing amyloid-beta plaques and synaptic regeneration...",
+                    neurological_cured: "🏆 NEURODEGENERATIVE SHIELD: Cognitive entropy successfully collapsed.",
+                    cardiovascular_init: "🫀 INITIATING VASCULAR RESTORATION...",
+                    cardiovascular_transform: "[HEMODYNAMICS]: Dissolving lipid plaques and LVEF improvement...",
+                    cardiovascular_cured: "🏆 CARDIOVASCULAR SHIELD: Hemodynamics normalized. Risk = 1.2%.",
+                    longevity_init: "🧬 INITIATING EPIGENETIC REJUVENATION...",
+                    longevity_transform: "[YAMANAKA OSK]: Partial transcriptional reprogramming without c-Myc...",
+                    longevity_cured: "🏆 CELLULAR REGENERATION: Biological age returned to normal.",
+                    metabolic_reset: "♻️ Resetting metabolic parameters to uncompensated chaos.",
+                    neurological_reset: "♻️ Resetting neuronal levels to uncontrolled protein aggregation.",
+                    cardiovascular_reset: "♻️ Resetting vascular hemodynamics to acute ischemic crisis.",
+                    longevity_reset: "♻️ Resetting cellular bio-age to advanced senescence (Hayflick risk)."
+                }
+            }
+        };
+
+        function addLogEntry(msgKey) {
             const timeStr = new Date().toLocaleTimeString();
-            state.logs.push(`[${timeStr}] ${msg}`);
+            state.logs.push({ time: timeStr, key: msgKey });
             if(state.logs.length > 15) state.logs.shift();
+            renderVanillaHUD();
+        }
+
+        function switchLanguage(langCode) {
+            state.lang = langCode;
+            document.documentElement.lang = langCode;
             renderVanillaHUD();
         }
 
@@ -492,30 +954,8 @@
             if(state.isTransitioning || state.curedStates[active]) return;
             state.isTransitioning = true;
             
-            let message1 = "";
-            let message2 = "";
-            let logCure = "";
-            
-            if (active === "metabolic") {
-                message1 = "🧬 ИНИЦИРАНЕ НА БИОЛОГИЧНО ИЗЛЕКУВАНЕ...";
-                message2 = "[ТРАНСФОРМАЦИЯ]: Мобилизиране на Pax4 бета-регенеративен отговор...";
-                logCure = "🏆 БИОЛОГИЧНО ИЗЛЕКУВАНЕ: 100% TIR УСПЕШНО ВАЛИДИРАНО.";
-            } else if (active === "neurological") {
-                message1 = "🧠 ИНИЦИРАНЕ НА НЕВРОПРОТЕКТИВНО ИЗЧИСТВАНЕ...";
-                message2 = "[CATUSKOTI]: Премахване на амилоид-бета и регенерация на синаптичната плътност...";
-                logCure = "🏆 НЕВРОДЕГЕНЕРАТИВЕН ЩИТ: Когнитивната ентропия е успешно свита.";
-            } else if (active === "cardiovascular") {
-                message1 = "🫀 ИНИЦИРАНЕ НА СЪДОВА РЕСТАВРАЦИЯ...";
-                message2 = "[ХЕМОДИНАМИКА]: Разтваряне на липидните плаки и подобряване на LVEF...";
-                logCure = "🏆 КАРДИОВАСКУЛАРЕН ЩИТ: Хемодинамиката е в норма. Прединфарктен риск = 1.2%.";
-            } else {
-                message1 = "🧬 ИНИЦИРАНЕ НА ЕПИГЕНЕТИЧНО ПОДМЛАДЯВАНЕ...";
-                message2 = "[YAMANAKA OSK]: Частично транскрипционно репрограмиране без c-Myc...";
-                logCure = "🏆 КЛЕТЪЧНА РЕГЕНЕРАЦИЯ: Биологичната възраст се върна до базови стойности.";
-            }
-
-            addLogEntry(message1);
-            addLogEntry(message2);
+            addLogEntry(active + "_init");
+            addLogEntry(active + "_transform");
 
             let duration = 3000;
             let intervalTime = 50;
@@ -553,7 +993,7 @@
                     clearInterval(timer);
                     state.curedStates[active] = true;
                     state.isTransitioning = false;
-                    addLogEntry(logCure);
+                    addLogEntry(active + "_cured");
                 }
                 renderVanillaHUD();
             }, intervalTime);
@@ -569,42 +1009,38 @@
                 state.metabolic.glucose = 16.50;
                 state.metabolic.cPeptide = 0.01;
                 state.metabolic.homaIr = 2.40;
-                addLogEntry("♻️ Нулиране на метаболитните параметри към некомпенсиран хаос.");
             } else if (active === "neurological") {
                 state.neurological.entropy = 3.82;
                 state.neurological.amyloid = 92.40;
                 state.neurological.tau = 84.10;
                 state.neurological.mmse = 12;
-                addLogEntry("♻️ Нулиране на невроналните нива към неконтролирана протеинова агрегация.");
             } else if (active === "cardiovascular") {
                 state.cardiovascular.entropy = 3.90;
                 state.cardiovascular.resistance = 4.80;
                 state.cardiovascular.lvef = 32;
                 state.cardiovascular.infarctProb = 94.50;
-                addLogEntry("♻️ Нулиране на съдовите хемодинамики към остра исхемична криза.");
             } else {
                 state.longevity.entropy = 3.95;
                 state.longevity.epigeneticAge = 74.50;
                 state.longevity.zombiePct = 42.10;
                 state.longevity.telomereLength = 4.80;
                 state.longevity.mitochondrialEntropy = 0.65;
-                addLogEntry("♻️ Нулиране на клетъчната био-възраст към напреднало стареене (Hayflick риск).");
             }
+            addLogEntry(active + "_reset");
             renderVanillaHUD();
         }
 
         function handleNeuralLinkToggle(e) {
-            // ДИРЕКТИВА: При прекъсване на Neural Link, SovereignHUD.tsx автоматически преминава в Emergency_Local_Mode, докато Knox не потвърди нов Heartbeat.
             state.neuralLinkConnected = e.checked;
             state.emergencyMode = !state.neuralLinkConnected;
             
             if(state.emergencyMode) {
                 document.body.classList.add("emergency-theme");
-                addLogEntry("🚨 NEURAL LINK: SEVERED. Превключване в Emergency_Local_Mode!");
-                addLogEntry("🔒 KNOX TEE: Активирана локална изолация на жизненоважните параметри.");
+                addLogEntry("emergency_severed");
+                addLogEntry("knox_isolation");
             } else {
                 document.body.classList.remove("emergency-theme");
-                addLogEntry("🟢 NEURAL LINK: RESTORED. Knox Heartbeat синхронизиран.");
+                addLogEntry("neural_restored");
             }
             renderVanillaHUD();
         }
@@ -612,7 +1048,7 @@
         function switchTwin(twinId) {
             if(state.isTransitioning) return;
             state.activeTwin = twinId;
-            addLogEntry(`🔄 Превключване към: ${twinId.toUpperCase()} Virtual Human Twin.`);
+            addLogEntry("switch_" + twinId);
             renderVanillaHUD();
         }
 
@@ -650,12 +1086,12 @@
         function generateChartHtml() {
             const active = state.activeTwin;
             const isCured = state.curedStates[active];
+            const dict = translations[state.lang];
             let data = [];
             let minVal = 0, maxVal = 20;
             let normalMinY = 0, normalMaxY = 0;
             let normalColor = "var(--neon-blue)";
             let themeColor = "var(--neon-purple)";
-            let labelX = "Времеви интервал (24 часа)";
             let labelY = "Показател";
 
             if (active === "metabolic") {
@@ -664,35 +1100,33 @@
                 normalMinY = 4.0; normalMaxY = 10.0;
                 normalColor = "var(--neon-blue)";
                 themeColor = isCured ? "var(--neon-emerald)" : "var(--neon-red)";
-                labelY = "Глюкоза (mmol/L)";
+                labelY = dict.dashboard.glucose;
             } else if (active === "neurological") {
-                // Decay simulation or stable
                 data = isCured ? rawCurves.curedNeurological : rawCurves.neurological;
                 minVal = 0; maxVal = 100;
-                normalMinY = 0; normalMaxY = 15.0; // Low amyloid normal
+                normalMinY = 0; normalMaxY = 15.0;
                 normalColor = "var(--neon-emerald)";
                 themeColor = isCured ? "var(--neon-blue)" : "var(--neon-amber)";
-                labelY = "Амилоидна тежест (pg/mL)";
+                labelY = dict.dashboard.amyloid;
             } else if (active === "cardiovascular") {
                 data = isCured ? rawCurves.curedCardiovascular : rawCurves.cardiovascular;
                 minVal = 0.5; maxVal = 5.5;
                 normalMinY = 0.8; normalMaxY = 1.5;
                 normalColor = "var(--neon-blue)";
                 themeColor = isCured ? "var(--neon-blue)" : "var(--neon-red)";
-                labelY = "Съдово съпротивление (dyn·s/cm⁵)";
+                labelY = dict.dashboard.resistance;
             } else {
                 data = isCured ? rawCurves.curedLongevity : rawCurves.longevity;
                 minVal = 25; maxVal = 85;
-                normalMinY = 25; normalMaxY = 45; // Younger bio age
+                normalMinY = 25; normalMaxY = 45;
                 normalColor = "var(--neon-emerald)";
                 themeColor = isCured ? "var(--neon-emerald)" : "var(--neon-pink)";
-                labelY = "Биологична възраст (Horvath Clock)";
+                labelY = dict.dashboard.epigeneticAge;
             }
 
             // Interpolate current values for animated path transition
             let currentPathData = [];
             if (state.isTransitioning) {
-                // Interpolated time series calculation
                 let baseData = rawCurves[active];
                 let targetData = rawCurves["cured" + active.charAt(0).toUpperCase() + active.slice(1)];
                 let pct = 0;
@@ -767,6 +1201,7 @@
 
             const active = state.activeTwin;
             const isCured = state.curedStates[active];
+            const dict = translations[state.lang];
             let entropyVal = 0;
 
             if (active === "metabolic") entropyVal = state.metabolic.entropy;
@@ -778,16 +1213,16 @@
             let twinSelectors = `
                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px;">
                     <button class="twin-btn ${active === 'metabolic' ? 'active' : ''}" onclick="switchTwin('metabolic')">
-                        🩺 <span>Метаболитен VHT v4.0</span>
+                        <span>${dict.twins.metabolic}</span>
                     </button>
                     <button class="twin-btn ${active === 'neurological' ? 'active' : ''}" onclick="switchTwin('neurological')">
-                        🧠 <span>Неврологичен VHT v5.0</span>
+                        <span>${dict.twins.neurological}</span>
                     </button>
                     <button class="twin-btn ${active === 'cardiovascular' ? 'active' : ''}" onclick="switchTwin('cardiovascular')">
-                        🫀 <span>Кардиоваскуларен VHT v5.0</span>
+                        <span>${dict.twins.cardiovascular}</span>
                     </button>
                     <button class="twin-btn ${active === 'longevity' ? 'active' : ''}" onclick="switchTwin('longevity')">
-                        🧬 <span>Дълголетие & Сенесценция</span>
+                        <span>${dict.twins.longevity}</span>
                     </button>
                 </div>
             `;
@@ -796,23 +1231,23 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <div style="display: flex; gap: 12px;">
                         <button class="tab-btn ${state.activeTab === 'dashboard' ? 'active' : ''}" onclick="switchTab('dashboard')">
-                            📊 Научен Панел (Лекари)
+                            ${dict.tabs.dashboard}
                         </button>
                         <button class="tab-btn ${state.activeTab === 'cohort' ? 'active' : ''}" onclick="switchTab('cohort')">
-                            👥 Кохортно Изследване (900 Близнаци)
+                            ${dict.tabs.cohort}
                         </button>
                         <button class="tab-btn ${state.activeTab === 'pillars' ? 'active' : ''}" onclick="switchTab('pillars')">
-                            🛡️ Трите Стълба на Сигурност
+                            ${dict.tabs.pillars}
                         </button>
                     </div>
                     <div>
                         ${!isCured && !state.isTransitioning ? `
                             <button class="cure-btn" onclick="triggerCureRestoration()">
-                                🧬 ИНДУЦИРАНЕ НА БИОЛОГИЧЕН РЕСТАРТ
+                                ${dict.controls.induce}
                             </button>
                         ` : `
                             <button class="tab-btn" onclick="resetCureState()" style="border-color: var(--neon-amber); color: var(--neon-amber);" ${state.isTransitioning ? 'disabled' : ''}>
-                                ♻️ ВЪЗСТАНОВЯВАНЕ НА ХАОСА
+                                ${dict.controls.reset}
                             </button>
                         `}
                     </div>
@@ -823,9 +1258,9 @@
                 <div class="glass-card emergency-card" style="display: flex; gap: 20px; align-items: center; margin-bottom: 28px;">
                     <div style="font-size: 2.5rem; color: var(--neon-red);">⚠️</div>
                     <div>
-                        <h3 style="font-size: 1.4rem; font-weight: 900; color: var(--neon-red);" class="glow-text-red">EMERGENCY LOCAL MODE ACTIVE // NEURAL LINK SEVERED</h3>
+                        <h3 style="font-size: 1.4rem; font-weight: 900; color: var(--neon-red);" class="glow-text-red">${dict.emergencyBanner}</h3>
                         <p style="color: #fda4af; font-size: 0.85rem; margin-top: 4px; line-height: 1.5">
-                            Системата премина в авариен офлайн режим. Всички медицински команди се подписват хардуерно от **Samsung Knox TEE** директно на силиция на Ryzen 7000, блокирайки аномални дозировки.
+                            ${dict.emergencyText}
                         </p>
                     </div>
                 </div>
@@ -834,227 +1269,201 @@
             let tabContent = '';
             
             if (state.activeTab === "dashboard") {
-                let leftTitle = "";
-                let leftDesc = "";
+                let leftTitle = dict.dashboard.title[active];
+                let leftDesc = dict.dashboard.desc[active];
                 let biomarkersHtml = "";
                 let patientInfoHtml = "";
-                let clinicalConclusion = "";
+                let clinicalConclusion = isCured ? dict.dashboard.conclusionVal["cured" + active.charAt(0).toUpperCase() + active.slice(1)] : dict.dashboard.conclusionVal[active];
 
                 if (active === "metabolic") {
-                    leftTitle = "🧬 Гликемична траектория на Ден 2 (Steady-State)";
-                    leftDesc = "Метаболитна крива на пациент P-402 при симулация. Зелената зона е клиничната норма.";
                     biomarkersHtml = `
                         <div style="border-left: 4px solid var(--neon-blue); padding-left: 12px;">
-                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Глюкоза (Glucose)</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">${dict.dashboard.glucose}</div>
                             <div style="font-size: 1.4rem; font-weight: 900;" class="mono ${isCured ? 'glow-text-emerald' : 'glow-text-red'}">
                                 ${state.metabolic.glucose.toFixed(2)} mmol/L
                             </div>
-                            <span style="font-size: 0.7rem; color: var(--text-secondary);">Норма: 4.5 - 6.0 mmol/L</span>
+                            <span style="font-size: 0.7rem; color: var(--text-secondary);">${dict.dashboard.glucoseNorm}</span>
                         </div>
                         <div style="border-left: 4px solid var(--neon-emerald); padding-left: 12px;">
-                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Ендогенен C-Пептид</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">${dict.dashboard.cPeptide}</div>
                             <div style="font-size: 1.4rem; font-weight: 900;" class="mono ${isCured ? 'glow-text-emerald animate-pulse' : 'glow-text-red'}">
                                 ${state.metabolic.cPeptide.toFixed(2)} nmol/L
                             </div>
-                            <span style="font-size: 0.7rem; color: var(--text-secondary);">Норма: 0.26 - 1.39 nmol/L</span>
+                            <span style="font-size: 0.7rem; color: var(--text-secondary);">${dict.dashboard.cPeptideNorm}</span>
                         </div>
                         <div style="border-left: 4px solid var(--neon-purple); padding-left: 12px;">
-                            <div style="font-size: 0.75rem; color: var(--text-secondary);">HOMA-IR Индекс</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">${dict.dashboard.homaIr}</div>
                             <div style="font-size: 1.4rem; font-weight: 900;" class="mono ${isCured ? 'glow-text-emerald' : 'glow-text-purple'}">
                                 ${state.metabolic.homaIr.toFixed(2)}
                             </div>
-                            <span style="font-size: 0.7rem; color: var(--text-secondary);">Норма: &lt; 1.0 (Сензитивност)</span>
+                            <span style="font-size: 0.7rem; color: var(--text-secondary);">${dict.dashboard.homaIrNorm}</span>
                         </div>
                     `;
                     patientInfoHtml = `
                         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(181,95,230,0.08); padding-bottom: 6px;">
-                            <span style="color: var(--text-secondary);">ПАЦИЕНТ:</span>
-                            <span style="font-weight: 700;">P-402 (Педиатричен)</span>
+                            <span style="color: var(--text-secondary);">${dict.dashboard.patient}</span>
+                            <span style="font-weight: 700;">${dict.dashboard.patientVal.metabolic}</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(181,95,230,0.08); padding-bottom: 6px;">
-                            <span style="color: var(--text-secondary);">ВЪЗРАСТ / ТЕГЛО:</span>
-                            <span style="font-weight: 700;">9 години / 32 кг</span>
+                            <span style="color: var(--text-secondary);">${dict.dashboard.ageWeight}</span>
+                            <span style="font-weight: 700;">${dict.dashboard.ageWeightVal.metabolic}</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(181,95,230,0.08); padding-bottom: 6px;">
-                            <span style="color: var(--text-secondary);">СЪСТОЯНИЕ:</span>
+                            <span style="color: var(--text-secondary);">${dict.dashboard.condition}</span>
                             <span style="font-weight: 900; color: ${isCured ? 'var(--neon-emerald)' : 'var(--neon-red)'};">
-                                ${isCured ? 'BIOLOGICAL_REVERSION' : 'SEVERE_PANCREATIC_ATROPHY'}
+                                ${isCured ? 'BIOLOGICAL_REVERSION' : dict.dashboard.conditionVal.metabolic}
                             </span>
                         </div>
                         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(181,95,230,0.08); padding-bottom: 6px;">
-                            <span style="color: var(--text-secondary);">АКТИВЕН ИНСУЛИН:</span>
+                            <span style="color: var(--text-secondary);">${dict.dashboard.activeInsulin}</span>
                             <span style="font-weight: 700; color: ${isCured ? 'var(--neon-emerald)' : 'var(--neon-amber)'};">
-                                ${isCured ? '0.00 U (Автоложна регулация)' : '4.50 U (Външна помпа)'}
+                                ${isCured ? dict.dashboard.extraParam.metabolicVal : dict.dashboard.therapyVal.metabolic}
                             </span>
                         </div>
                     `;
-                    clinicalConclusion = isCured 
-                        ? 'Появата на ендогенен C-пептид (0.90 nmol/L) в съчетание с пълно възстановяване на инсулиновата чувствителност (HOMA-IR = 1.0) бележи успешна Pax4-индуцирана бета-клетъчна регенерация и автологична терапия.'
-                        : 'Пациентът е в хаотична метаболитна декомпенсация с абсолютен инсулинов дефицит. Индуцирайте биологичния рестарт чрез централния бутон за регенерация.';
                 } else if (active === "neurological") {
-                    leftTitle = "🧠 Разпад на Амилоидните Протофибрили (Lecanemab)";
-                    leftDesc = "Моделиране на кинетиката на разпада на Amyloid-beta и регенерация на синаптичния трансдюсер.";
                     biomarkersHtml = `
                         <div style="border-left: 4px solid var(--neon-amber); padding-left: 12px;">
-                            <div style="font-size: 0.75rem; color: var(--text-secondary);">CSF Amyloid-Beta 42</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">${dict.dashboard.amyloid}</div>
                             <div style="font-size: 1.4rem; font-weight: 900;" class="mono ${isCured ? 'glow-text-blue' : 'glow-text-amber'}">
                                 ${state.neurological.amyloid.toFixed(2)} pg/mL
                             </div>
-                            <span style="font-size: 0.7rem; color: var(--text-secondary);">Норма: &lt; 15 pg/mL (чист мозък)</span>
+                            <span style="font-size: 0.7rem; color: var(--text-secondary);">${dict.dashboard.amyloidNorm}</span>
                         </div>
                         <div style="border-left: 4px solid var(--neon-pink); padding-left: 12px;">
-                            <div style="font-size: 0.75rem; color: var(--text-secondary);">CSF Phosphorylated Tau</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">${dict.dashboard.tau}</div>
                             <div style="font-size: 1.4rem; font-weight: 900;" class="mono ${isCured ? 'glow-text-emerald' : 'glow-text-red'}">
                                 ${state.neurological.tau.toFixed(2)} pg/mL
                             </div>
-                            <span style="font-size: 0.7rem; color: var(--text-secondary);">Норма: &lt; 8 pg/mL (стабилен цитоскелет)</span>
+                            <span style="font-size: 0.7rem; color: var(--text-secondary);">${dict.dashboard.tauNorm}</span>
                         </div>
                         <div style="border-left: 4px solid var(--neon-blue); padding-left: 12px;">
-                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Когнитивен MMSE Индекс</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">${dict.dashboard.mmse}</div>
                             <div style="font-size: 1.4rem; font-weight: 900;" class="mono ${isCured ? 'glow-text-emerald' : 'glow-text-amber'}">
                                 ${state.neurological.mmse} / 30
                             </div>
-                            <span style="font-size: 0.7rem; color: var(--text-secondary);">Норма: 27 - 30 (Здрав ум)</span>
+                            <span style="font-size: 0.7rem; color: var(--text-secondary);">${dict.dashboard.mmseNorm}</span>
                         </div>
                     `;
                     patientInfoHtml = `
                         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(181,95,230,0.08); padding-bottom: 6px;">
-                            <span style="color: var(--text-secondary);">ПАЦИЕНТ:</span>
-                            <span style="font-weight: 700;">N-807 (Alzheimer-Family)</span>
+                            <span style="color: var(--text-secondary);">${dict.dashboard.patient}</span>
+                            <span style="font-weight: 700;">${dict.dashboard.patientVal.neurological}</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(181,95,230,0.08); padding-bottom: 6px;">
-                            <span style="color: var(--text-secondary);">ГЕНЕТИЧЕН ПРОФИЛ:</span>
-                            <span style="font-weight: 700; color: var(--neon-red);">APOE ε4/ε4 Homozygous</span>
+                            <span style="color: var(--text-secondary);">${dict.extraParamTitle.neurological}</span>
+                            <span style="font-weight: 700; color: var(--neon-red);">${dict.dashboard.conditionVal.neurological}</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(181,95,230,0.08); padding-bottom: 6px;">
-                            <span style="color: var(--text-secondary);">CATUSKOTI СЪСТОЯНИЕ:</span>
+                            <span style="color: var(--text-secondary);">${dict.dashboard.extraParam.neurologicalLabel}</span>
                             <span style="font-weight: 900; color: ${isCured ? 'var(--neon-emerald)' : 'var(--neon-amber)'};">
-                                ${isCured ? 'ANUBHAYAM (Трансцендентност)' : 'UBHAYAM (Парадокс / MCI)'}
+                                ${isCured ? dict.dashboard.extraParam.neurologicalCuredVal : dict.dashboard.extraParam.neurologicalVal}
                             </span>
                         </div>
                         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(181,95,230,0.08); padding-bottom: 6px;">
-                            <span style="color: var(--text-secondary);">АКТИВНО ЛЕЧЕНИЕ:</span>
+                            <span style="color: var(--text-secondary);">${dict.dashboard.activeLecanemab}</span>
                             <span style="font-weight: 700; color: ${isCured ? 'var(--neon-emerald)' : 'var(--neon-pink)'};">
-                                ${isCured ? 'Lecanemab (Cleared)' : 'Дегенеративен разпад'}
+                                ${isCured ? (state.lang === 'bg' ? 'Lecanemab (Изчистен)' : 'Lecanemab (Cleared)') : dict.dashboard.therapyVal.neurological}
                             </span>
                         </div>
                     `;
-                    clinicalConclusion = isCured 
-                        ? 'Моноклоналното антитяло успешно се е свързало с разтворимите протофибрили. CSF Amyloid-Beta е изчистен до 2.10 pg/mL, а Catuskoti оракулът премина към ANUBHAYAM с възстановена когниция (MMSE = 28).'
-                        : 'Пациентът е в състояние UBHAYAM (MCI парадокс) с агресивно натрупване на тау нишки. Необходим е незабавен рестарт и пробиване на когнитивната ентропия.';
                 } else if (active === "cardiovascular") {
-                    leftTitle = "🫀 Хемодинамика и Възстановяване на Коронарния Ток";
-                    leftDesc = "Коронарна хемодинамика при остра исхемична криза. Моделиране на съдово съпротивление и прединфарктна телеметрия.";
                     biomarkersHtml = `
                         <div style="border-left: 4px solid var(--neon-red); padding-left: 12px;">
-                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Съдово съпротивление</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">${dict.dashboard.resistance}</div>
                             <div style="font-size: 1.4rem; font-weight: 900;" class="mono ${isCured ? 'glow-text-blue' : 'glow-text-red'}">
                                 ${state.cardiovascular.resistance.toFixed(2)} dyn·s/cm⁵
                             </div>
-                            <span style="font-size: 0.7rem; color: var(--text-secondary);">Норма: 0.8 - 1.5 dyn·s/cm⁵</span>
+                            <span style="font-size: 0.7rem; color: var(--text-secondary);">${dict.dashboard.resistanceNorm}</span>
                         </div>
                         <div style="border-left: 4px solid var(--neon-blue); padding-left: 12px;">
-                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Изтласкваща фракция (LVEF)</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">${dict.dashboard.lvef}</div>
                             <div style="font-size: 1.4rem; font-weight: 900;" class="mono ${isCured ? 'glow-text-emerald' : 'glow-text-red'}">
                                 ${state.cardiovascular.lvef}%
                             </div>
-                            <span style="font-size: 0.7rem; color: var(--text-secondary);">Норма: 55% - 70% (EF)</span>
+                            <span style="font-size: 0.7rem; color: var(--text-secondary);">${dict.dashboard.lvefNorm}</span>
                         </div>
                         <div style="border-left: 4px solid var(--neon-pink); padding-left: 12px;">
-                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Вероятност за инфаркт (60m)</div>
-                            <div style="font-size: 1.4rem; font-weight: 900;" class="mono ${isCured ? 'glow-text-emerald' : 'glow-text-red animate-pulse'}">
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">${dict.dashboard.infarctProb}</div>
+                            <div style="font-size: 1.4rem; font-weight: 900;" class="mono ${isCured ? 'glow-text-emerald' : 'glow-text-red  animate-pulse'}">
                                 ${state.cardiovascular.infarctProb.toFixed(2)}%
                             </div>
-                            <span style="font-size: 0.7rem; color: var(--text-secondary);">Норма: &lt; 2.0% (Нисък риск)</span>
+                            <span style="font-size: 0.7rem; color: var(--text-secondary);">${dict.dashboard.infarctProbNorm}</span>
                         </div>
                     `;
                     patientInfoHtml = `
                         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(181,95,230,0.08); padding-bottom: 6px;">
-                            <span style="color: var(--text-secondary);">ПАЦИЕНТ:</span>
-                            <span style="font-weight: 700;">C-209 (Heart Failure NYHA IV)</span>
+                            <span style="color: var(--text-secondary);">${dict.dashboard.patient}</span>
+                            <span style="font-weight: 700;">${dict.dashboard.patientVal.cardiovascular}</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(181,95,230,0.08); padding-bottom: 6px;">
-                            <span style="color: var(--text-secondary);">АРТЕРИАЛНО НАЛЯГАНЕ:</span>
-                            <span style="font-weight: 700;">${isCured ? '120/80 mmHg (Оптимално)' : '185/115 mmHg (Критично)'}</span>
+                            <span style="color: var(--text-secondary);">${dict.extraParamTitle.cardiovascular}</span>
+                            <span style="font-weight: 700;">${isCured ? dict.extraParamTitle.cardiovascularCured : dict.dashboard.therapyVal.cardiovascular}</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(181,95,230,0.08); padding-bottom: 6px;">
-                            <span style="color: var(--text-secondary);">ЕКГ АНАЛИЗ (ST):</span>
+                            <span style="color: var(--text-secondary);">${dict.extraParamTitle.cardiovascularLabelEKG}</span>
                             <span style="font-weight: 900; color: ${isCured ? 'var(--neon-emerald)' : 'var(--neon-red)'};">
-                                ${isCured ? 'NORMAL (0.00 mm elevation)' : 'ACUTE ISCHEMIA (2.45 mm ST-elevation)'}
+                                ${isCured ? dict.extraParamTitle.cardiovascularCuredEKG : dict.dashboard.conditionVal.cardiovascular}
                             </span>
                         </div>
                         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(181,95,230,0.08); padding-bottom: 6px;">
-                            <span style="color: var(--text-secondary);">ЕКТОПИЧНА МАЗНИНА:</span>
-                            <span style="font-weight: 700; color: var(--neon-amber);">Коефициент 1.35</span>
+                            <span style="color: var(--text-secondary);">${dict.dashboard.extraParam.cardiovascularLabel}</span>
+                            <span style="font-weight: 700; color: var(--neon-amber);">${dict.dashboard.extraParam.cardiovascularVal}</span>
                         </div>
                     `;
-                    clinicalConclusion = isCured 
-                        ? 'Коронарната съдова проходимост е възстановена. LVEF е нормализиран на 62% чрез редукция на съпротивлението до 1.00. 60-минутният прединфарктен оракул показва стабилно ниво на сигурност (1.20% риск).'
-                        : 'ПАЦИЕНТЪТ Е В ОСТРА КАРДИО-ИСХЕМИЧНА КРИЗА! 94.50% риск от инфаркт в следващите 45 минути на база ЕКГ ST-елевация. Незабавно индицирайте съдовата стабилизация.';
                 } else {
-                    leftTitle = "🧬 Клетъчно подмладяване и Митохондриален контрол";
-                    leftDesc = "Horvath Епигенетичен часовник и редукция на митохондриалната ентропия чрез насочен автоложен трансфер.";
                     biomarkersHtml = `
                         <div style="border-left: 4px solid var(--neon-emerald); padding-left: 12px;">
-                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Биологична възраст (Horvath)</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">${dict.dashboard.epigeneticAge}</div>
                             <div style="font-size: 1.4rem; font-weight: 900;" class="mono ${isCured ? 'glow-text-emerald animate-pulse' : 'glow-text-pink'}">
-                                ${state.longevity.epigeneticAge.toFixed(2)} г.
+                                ${state.longevity.epigeneticAge.toFixed(2)} ${dict.cohort.yearsSuffix}
                             </div>
-                            <span style="font-size: 0.7rem; color: var(--text-secondary);">Хронологична: 74.5 години</span>
+                            <span style="font-size: 0.7rem; color: var(--text-secondary);">${dict.dashboard.epigeneticAgeNorm}</span>
                         </div>
                         <div style="border-left: 4px solid var(--neon-pink); padding-left: 12px;">
-                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Сенесцентни (Zombie) клетки</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">${dict.dashboard.zombiePct}</div>
                             <div style="font-size: 1.4rem; font-weight: 900;" class="mono ${isCured ? 'glow-text-emerald' : 'glow-text-red'}">
                                 ${state.longevity.zombiePct.toFixed(2)}%
                             </div>
-                            <span style="font-size: 0.7rem; color: var(--text-secondary);">Норма: &lt; 2.0% (Млади тъкани)</span>
+                            <span style="font-size: 0.7rem; color: var(--text-secondary);">${dict.dashboard.zombiePctNorm}</span>
                         </div>
                         <div style="border-left: 4px solid var(--neon-purple); padding-left: 12px;">
-                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Теломерна дължина (qPCR)</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">${dict.dashboard.telomere}</div>
                             <div style="font-size: 1.4rem; font-weight: 900;" class="mono ${isCured ? 'glow-text-emerald' : 'glow-text-pink'}">
                                 ${state.longevity.telomereLength.toFixed(2)} kbp
                             </div>
-                            <span style="font-size: 0.7rem; color: var(--text-secondary);">КритиченHayflick: 5.00 kbp</span>
+                            <span style="font-size: 0.7rem; color: var(--text-secondary);">${dict.dashboard.telomereNorm}</span>
                         </div>
                         <div style="border-left: 4px solid var(--neon-blue); padding-left: 12px;">
-                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Митохондриална Ентропия</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">${dict.dashboard.mitochondrialEntropy}</div>
                             <div style="font-size: 1.4rem; font-weight: 900;" class="mono ${isCured ? 'glow-text-emerald' : 'glow-text-red animate-pulse'}">
                                 ${(state.longevity.mitochondrialEntropy * 100).toFixed(0)}%
                             </div>
-                            <span style="font-size: 0.7rem; color: var(--text-secondary);">Критичен mtDNA: &gt; 35%</span>
+                            <span style="font-size: 0.7rem; color: var(--text-secondary);">${dict.dashboard.mitochondrialEntropyNorm}</span>
                         </div>
                     `;
                     patientInfoHtml = `
                         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(181,95,230,0.08); padding-bottom: 6px;">
-                            <span style="color: var(--text-secondary);">ПАЦИЕНТ:</span>
-                            <span style="font-weight: 700;">L-001 (Сенилен статус)</span>
+                            <span style="color: var(--text-secondary);">${dict.dashboard.patient}</span>
+                            <span style="font-weight: 700;">${dict.dashboard.patientVal.longevity}</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(181,95,230,0.08); padding-bottom: 6px;">
-                            <span style="color: var(--text-secondary);">YAMANAKA OSK ИНДУКЦИЯ:</span>
+                            <span style="color: var(--text-secondary);">${dict.extraParamTitle.longevity}</span>
                             <span style="font-weight: 700; color: ${isCured ? 'var(--neon-emerald)' : 'var(--neon-red)'};">
-                                ${isCured ? 'ACTIVE (Oct4/Sox2/Klf4)' : 'OFFLINE'}
+                                ${isCured ? dict.extraParamTitle.longevityCuredVal : dict.extraParamTitle.longevityVal}
                             </span>
                         </div>
                         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(181,95,230,0.08); padding-bottom: 6px;">
-                            <span style="color: var(--text-secondary);">МИТОХОНДРИАЛЕН ТРАНСФЕР:</span>
-                            <span style="font-weight: 700; color: ${isCured ? 'var(--neon-emerald)' : 'var(--neon-red)'};">
-                                ${isCured ? 'COMPLETED (Stem-derived)' : 'ABORTED (mtDNA Damage)'}
-                            </span>
+                            <span style="color: var(--text-secondary);">${dict.dashboard.activeDasatinib}</span>
+                            <span style="font-weight: 900; color: var(--neon-emerald);">${dict.dashboard.therapyVal.longevity}</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(181,95,230,0.08); padding-bottom: 6px;">
-                            <span style="color: var(--text-secondary);">c-Myc ОНКОГЕНЕН ШИЛД:</span>
-                            <span style="font-weight: 900; color: var(--neon-emerald);">SECURED (0.00% Expression)</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(181,95,230,0.08); padding-bottom: 6px;">
-                            <span style="color: var(--text-secondary);">SASP ВЪЗПАЛЕНИЕ:</span>
+                            <span style="color: var(--text-secondary);">${dict.dashboard.extraParam.longevityLabel}</span>
                             <span style="font-weight: 700; color: ${isCured ? 'var(--neon-emerald)' : 'var(--neon-red)'};">
-                                ${isCured ? 'IL-6: 1.05 pg/mL (Базово)' : 'IL-6: 14.80 pg/mL (Токсично)'}
+                                ${isCured ? dict.dashboard.extraParam.longevityCuredVal : dict.dashboard.extraParam.longevityVal}
                             </span>
                         </div>
                     `;
-                    clinicalConclusion = isCured 
-                        ? 'Сенолитичното прочистване с D+Q елиминира токсичните зомби клетки до 1.50%. Насоченият автоложен трансфер на здрави митохондрии сведе mtDNA мутационния товар до 5.0%, нормализирайки ATP производството. Частичният Yamanaka OSK протокол безопасно намали биологичната възраст до 32.0 години.'
-                        : 'Клетките са достигнали Hayflick лимита с критично къси теломери (4.80 kbp). Митохондриалната ентропия е критична (65% мутационен товар на mtDNA), което блокира клетъчното дишане. Изпълнете спешния биологичен рестарт.';
                 }
 
                 tabContent = `
@@ -1072,7 +1481,7 @@
                                     </p>
                                 </div>
                                 <div style="text-align: right;" class="mono">
-                                    <div style="font-size: 0.7rem; color: var(--text-secondary);">SYSTEM ENTROPY</div>
+                                    <div style="font-size: 0.7rem; color: var(--text-secondary);">${dict.dashboard.entropy}</div>
                                     <div style="font-size: 1.6rem; font-weight: 900; color: ${isCured ? 'var(--neon-emerald)' : 'var(--neon-red)'};" class="${isCured ? 'glow-text-emerald' : 'glow-text-red'}">
                                         ${entropyVal.toFixed(2)}
                                     </div>
@@ -1094,7 +1503,7 @@
                         <div class="column-flex">
                             <div class="glass-card glow-purple ${state.emergencyMode ? 'emergency-card' : ''}" style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 16px;">
                                 <h3 style="font-size: 1.2rem; font-weight: 900; display: flex; align-items: center; gap: 8px;">
-                                    ℹ️ Описание на Пациента
+                                    ${dict.dashboard.patientCard}
                                 </h3>
                                 
                                 <div style="display: flex; flex-direction: column; gap: 12px;" class="mono">
@@ -1103,7 +1512,7 @@
 
                                 <div style="padding: 16px; background: ${isCured ? 'rgba(0, 255, 170, 0.04)' : 'rgba(255, 59, 111, 0.04)'}; border-radius: 12px; border: 1px solid ${isCured ? 'rgba(0,255,170,0.15)' : 'rgba(255,59,111,0.15)'};">
                                     <div style="font-size: 0.8rem; font-weight: 700; color: ${isCured ? 'var(--neon-emerald)' : 'var(--neon-red)'};" class="mono">
-                                        🔬 КЛИНИЧЕН ИЗВОД:
+                                        ${dict.dashboard.conclusionTitle}
                                     </div>
                                     <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 6px; line-height: 1.5;">
                                         ${clinicalConclusion}
@@ -1114,10 +1523,14 @@
                             <!-- Live Telemetry Stream Grid -->
                             <div class="glass-card ${state.emergencyMode ? 'emergency-card' : ''}" style="height: 185px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
                                 <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px;">
-                                    📟 LIVE_SUBSTRATE_TELEMETRY_LOG
+                                    ${dict.dashboard.telemetryLog}
                                 </div>
                                 <div style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; font-size: 0.75rem;" class="mono text-slate-400">
-                                    ${state.logs.map(log => `<div>${log}</div>`).join('')}
+                                    ${state.logs.map(log => {
+                                        if (typeof log === "string") return `<div>${log}</div>`;
+                                        const msg = dict.logMessages[log.key] || log.key;
+                                        return `<div>[${log.time}] ${msg}</div>`;
+                                    }).join('')}
                                 </div>
                             </div>
                         </div>
@@ -1125,18 +1538,17 @@
                     </div>
                 `;
             } else if (state.activeTab === "cohort") {
-                let cohortTitle = "";
-                let cohortDesc = "";
-                let tableHeaders = [];
+                let cohortTitle = dict.cohort.title[active];
+                let cohortDesc = dict.cohort.desc[active];
+                let tableHeaders = dict.cohort.headers[active];
                 let rowsHtml = "";
 
                 if (active === "metabolic") {
-                    cohortTitle = "👥 Сравнителен кохортен екран (900 виртуални близнаци)";
-                    cohortDesc = "Скалиране на автоложното излекуване v4.0 върху цялата извадка на Националния регистър за 2015 г.";
-                    tableHeaders = ["Възрастова Група", "Брой близнаци", "Базов TIR (2015)", "Конвенционален TIR", "VHT v3.0 TIR", "v4.0 Биологичен TIR", "Базови Хипогликемии", "v4.0 Хипогликемии"];
-                    rowsHtml = cohorts.metabolic.map(row => `
+                    rowsHtml = cohorts.metabolic.map(row => {
+                        const trGroup = dict.cohort.groups[row.group] || row.group;
+                        return `
                         <tr>
-                            <td style="font-weight: 700;">${row.group}</td>
+                            <td style="font-weight: 700;">${trGroup}</td>
                             <td>${row.count}</td>
                             <td style="color: var(--neon-red);">${row.baseline}</td>
                             <td>${row.conv}</td>
@@ -1149,14 +1561,13 @@
                                 ${isCured ? row.hypoV4.toFixed(1) : '---'}
                             </td>
                         </tr>
-                    `).join('');
+                    `;}).join('');
                 } else if (active === "neurological") {
-                    cohortTitle = "👥 Кохортно изследване (Амилоидна тежест & MMSE)";
-                    cohortDesc = "Ефикасност на Lecanemab при свиване на когнитивната ентропия при 900 виртуални симулации.";
-                    tableHeaders = ["Възраст / Стадий", "Брой пациенти", "Базов MMSE", "Конвенционално лечение", "Терапевтичен рестарт", "Прогнозна ефикасност (30 дни)", "Свиване на ентропията"];
-                    rowsHtml = cohorts.neurological.map(row => `
+                    rowsHtml = cohorts.neurological.map(row => {
+                        const trGroup = dict.cohort.groups[row.group] || row.group;
+                        return `
                         <tr>
-                            <td style="font-weight: 700;">${row.group}</td>
+                            <td style="font-weight: 700;">${trGroup}</td>
                             <td>${row.count}</td>
                             <td style="color: var(--neon-red);">${row.baseline}</td>
                             <td>${row.conv}</td>
@@ -1168,14 +1579,13 @@
                                 ${isCured ? '95.00%' : '---'}
                             </td>
                         </tr>
-                    `).join('');
+                    `;}).join('');
                 } else if (active === "cardiovascular") {
-                    cohortTitle = "👥 Хемодинамични кохортни симулации (NYHA Class)";
-                    cohortDesc = "1-годишен превантивен ефект на съдова проходимост и LVEF регенерация.";
-                    tableHeaders = ["NYHA Група", "Брой пациенти", "Базов LVEF", "Конвенционална терапия", "VHT v3.0 Регенерация", "v5.0 Оптимален LVEF", "Възстановяване на толеранс"];
-                    rowsHtml = cohorts.cardiovascular.map(row => `
+                    rowsHtml = cohorts.cardiovascular.map(row => {
+                        const trGroup = dict.cohort.groups[row.group] || row.group;
+                        return `
                         <tr>
-                            <td style="font-weight: 700;">${row.group}</td>
+                            <td style="font-weight: 700;">${trGroup}</td>
                             <td>${row.count}</td>
                             <td style="color: var(--neon-red);">${row.baseline}</td>
                             <td>${row.conv}</td>
@@ -1184,29 +1594,33 @@
                                 ${isCured ? row.v4 : '---'}
                             </td>
                             <td style="color: var(--neon-emerald); font-weight: 900;">
-                                ${isCured ? '100% Възстановена' : '---'}
+                                ${isCured ? dict.cohort.curedRestored : '---'}
                             </td>
                         </tr>
-                    `).join('');
+                    `;}).join('');
                 } else {
-                    cohortTitle = "👥 Епигенетично подмладяване и Rejuvenation Cohort";
-                    cohortDesc = "Horvath Epigenetic Clock проследяване след Yamanaka OSK факторен трансфер.";
-                    tableHeaders = ["Възрастова Група", "Брой пациенти", "Базов биологичен статус", "Сенолитично прочистване", "Epigenetic Reversal", "Биологична норма (v5.0)", "Lifespan Extension Index"];
-                    rowsHtml = cohorts.longevity.map(row => `
+                    rowsHtml = cohorts.longevity.map(row => {
+                        const trGroup = dict.cohort.groups[row.group] || row.group;
+                        // Clean up " г." or replace it
+                        let baselineStr = state.lang === 'bg' ? row.baseline : row.baseline.replace(" г.", dict.cohort.yearsSuffix);
+                        let convStr = state.lang === 'bg' ? row.conv : row.conv.replace(" г.", dict.cohort.yearsSuffix);
+                        let v3Str = state.lang === 'bg' ? row.v3 : row.v3.replace(" г.", dict.cohort.yearsSuffix);
+                        let v4Str = state.lang === 'bg' ? row.v4 : row.v4.replace(" г.", dict.cohort.yearsSuffix);
+                        return `
                         <tr>
-                            <td style="font-weight: 700;">${row.group}</td>
+                            <td style="font-weight: 700;">${trGroup}</td>
                             <td>${row.count}</td>
-                            <td style="color: var(--neon-red);">${row.baseline}</td>
-                            <td>${row.conv}</td>
-                            <td style="color: var(--neon-purple);">${row.v3}</td>
+                            <td style="color: var(--neon-red);">${baselineStr}</td>
+                            <td>${convStr}</td>
+                            <td style="color: var(--neon-purple);">${v3Str}</td>
                             <td style="color: var(--neon-emerald); font-weight: 900;" class="glow-text-emerald">
-                                ${isCured ? row.v4 : '---'}
+                                ${isCured ? v4Str : '---'}
                             </td>
                             <td style="color: var(--neon-emerald); font-weight: 900;">
-                                ${isCured ? '+25.4 години' : '---'}
+                                ${isCured ? '+25.4' + dict.cohort.yearsSuffix : '---'}
                             </td>
                         </tr>
-                    `).join('');
+                    `;}).join('');
                 }
 
                 tabContent = `
@@ -1234,14 +1648,11 @@
                 `;
             } else if (state.activeTab === "pillars") {
                 let codeBlock = "";
-                let pillar1 = "";
-                let pillar2 = "";
-                let pillar3 = "";
+                let pillar1 = dict.pillars[active][0];
+                let pillar2 = dict.pillars[active][1];
+                let pillar3 = dict.pillars[active][2];
 
                 if (active === "metabolic") {
-                    pillar1 = "Математическа защита блокира опасни дози при концентрирани форми на прандиален инсулин (U-200, U-300) без съответна механична калибрация.";
-                    pillar2 = "Превантивно 15% намаление на въглехидратния коефициент (ICR) сутрин за блокиране на Dawn Phenomenon кортизоловата резистентност.";
-                    pillar3 = "Моделиране на GLUT4 транслокацията при аеробни спортове. Превантивно 30% до 50% свиване на болуса за предотвратяване на хипогликемии.";
                     codeBlock = `
 // ═══ METABOLIC_SAFETY_LAWS: Концентрационен и Диететичен Синхрон ═══
 assert(patient.verified_insulin_concentration == U_100 || patient.verified_insulin_concentration == U_200 || patient.verified_insulin_concentration == U_300);
@@ -1257,9 +1668,6 @@ process CALCULATE_ICR(time_of_day: Time, base_icr: Decimal) -> Decimal {
 }
                     `;
                 } else if (active === "neurological") {
-                    pillar1 = "Label Verification Gate изисква физическо GFR бъбречно филтриране и биометричен подпис Knox преди назначаване на Lecanemab с цел спиране на ARIA-E едема.";
-                    pillar2 = "Калибриране към кетогенна невропротекция, осигуряваща ATP кетонови тела (B-hydroxybutyrate) за заобикаляне на дефекта в глюкозния метаболизъм.";
-                    pillar3 = "Спортният коефициент се координира с Parkinson моторния тремор. При нива над 0.70 tremor index, тежката физическа дейност се блокира за сигурност.";
                     codeBlock = `
 // Complexity: O(1)
 process PHARMACOTHERAPY_DOSAGE_SHIELD(
@@ -1277,9 +1685,6 @@ process PHARMACOTHERAPY_DOSAGE_SHIELD(
 }
                     `;
                 } else if (active === "cardiovascular") {
-                    pillar1 = "Индивидуален фармакотерапевтичен дозов филтър на база бъбречен клирънс (GFR) за кардиотоници (Digoxin) и антикоагуланти (Warfarin).";
-                    pillar2 = "DASH/Ниско-натриева диета с нива на натрий строго < 1500mg за предотвратяване на течности и белодробен едем при NYHA Class III/IV.";
-                    pillar3 = "Спортен лимит (Sports Cardiac Cap): При ниска изтласкаща фракция (LVEF < 35%) или NYHA >= 3, спортната активност е блокирана за сигурност.";
                     codeBlock = `
 // Complexity: O(1)
 process SPORTS_COEFFICIENT(
@@ -1297,9 +1702,6 @@ process SPORTS_COEFFICIENT(
 }
                     `;
                 } else {
-                    pillar1 = "Фармакотерапевтичен щит за сенолитична терапия с Dasatinib. Пълно блокиране при силна неутропения (Neutrophils < 1.5 * 10⁹/L).";
-                    pillar2 = "Калорична рестрикция и NAD+ прекурсори, активиращи SIRT1 и SIRT3 сиртуините за потискане на възпалителния NLRP3 инфламазом.";
-                    pillar3 = "Спортен теломерен фактор: Аеробното натоварване подобрява теломеразната активност (hTERT) и поддържа теломерната дължина над Hayflick границата.";
                     codeBlock = `
 // Complexity: O(1)
 process YAMANAKA_OSK_REPROGRAM(
@@ -1325,22 +1727,22 @@ process YAMANAKA_OSK_REPROGRAM(
                     <div style="display: flex; flex-direction: column; gap: 24px;">
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
                             <div class="glass-card ${state.emergencyMode ? 'emergency-card' : ''}">
-                                <div style="font-size: 0.75rem; color: var(--neon-blue); font-weight: 700; margin-bottom: 8px;">СТЪЛБ 1</div>
-                                <h3 style="font-size: 1.2rem; font-weight: 900; margin-bottom: 8px;">Фармакотерапевтичен Дозов Щит</h3>
+                                <div style="font-size: 0.75rem; color: var(--neon-blue); font-weight: 700; margin-bottom: 8px;">${dict.pillars.headers[0]}</div>
+                                <h3 style="font-size: 1.2rem; font-weight: 900; margin-bottom: 8px;">${dict.pillars.titles[0]}</h3>
                                 <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.6;">
                                     ${pillar1}
                                 </p>
                             </div>
                             <div class="glass-card ${state.emergencyMode ? 'emergency-card' : ''}">
-                                <div style="font-size: 0.75rem; color: var(--neon-purple); font-weight: 700; margin-bottom: 8px;">СТЪЛБ 2</div>
-                                <h3 style="font-size: 1.2rem; font-weight: 900; margin-bottom: 8px;">Диететичен & Хидратационен Контрол</h3>
+                                <div style="font-size: 0.75rem; color: var(--neon-purple); font-weight: 700; margin-bottom: 8px;">${dict.pillars.headers[1]}</div>
+                                <h3 style="font-size: 1.2rem; font-weight: 900; margin-bottom: 8px;">${dict.pillars.titles[1]}</h3>
                                 <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.6;">
                                     ${pillar2}
                                 </p>
                             </div>
                             <div class="glass-card ${state.emergencyMode ? 'emergency-card' : ''}">
-                                <div style="font-size: 0.75rem; color: var(--neon-amber); font-weight: 700; margin-bottom: 8px;">СТЪЛБ 3</div>
-                                <h3 style="font-size: 1.2rem; font-weight: 900; margin-bottom: 8px;">Физическа Активност</h3>
+                                <div style="font-size: 0.75rem; color: var(--neon-amber); font-weight: 700; margin-bottom: 8px;">${dict.pillars.headers[2]}</div>
+                                <h3 style="font-size: 1.2rem; font-weight: 900; margin-bottom: 8px;">${dict.pillars.titles[2]}</h3>
                                 <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.6;">
                                     ${pillar3}
                                 </p>
@@ -1349,7 +1751,7 @@ process YAMANAKA_OSK_REPROGRAM(
 
                         <div class="glass-card ${state.emergencyMode ? 'emergency-card' : ''}">
                             <h3 style="font-size: 1.2rem; font-weight: 900; margin-bottom: 16px;">
-                                💻 Физиологичен код на безопасност (SOUL Safety Gate)
+                                ${dict.pillars.codeTitle}
                             </h3>
                             <pre class="code-container mono" style="white-space: pre-wrap; font-size: 0.85rem; color: #b2ccd6;">${codeBlock}</pre>
                         </div>
@@ -1365,8 +1767,14 @@ process YAMANAKA_OSK_REPROGRAM(
                     </div>
 
                     <div style="display: flex; align-items: center; gap: 24px;">
+                        <!-- Glassmorphic Language Toggle Menu -->
+                        <div style="display: flex; align-items: center; gap: 4px; background: rgba(181, 95, 230, 0.03); padding: 4px 6px; border-radius: 100px; border: 1px solid var(--purple-border);">
+                            <button onclick="switchLanguage('bg')" style="background: ${state.lang === 'bg' ? 'rgba(181, 95, 230, 0.18)' : 'transparent'}; border: none; color: ${state.lang === 'bg' ? '#fff' : 'var(--text-secondary)'}; font-size: 0.75rem; font-weight: 800; padding: 5px 14px; border-radius: 100px; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); cursor: pointer; text-shadow: ${state.lang === 'bg' ? '0 0 10px rgba(255,255,255,0.5)' : 'none'};">BG</button>
+                            <button onclick="switchLanguage('en')" style="background: ${state.lang === 'en' ? 'rgba(181, 95, 230, 0.18)' : 'transparent'}; border: none; color: ${state.lang === 'en' ? '#fff' : 'var(--text-secondary)'}; font-size: 0.75rem; font-weight: 800; padding: 5px 14px; border-radius: 100px; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); cursor: pointer; text-shadow: ${state.lang === 'en' ? '0 0 10px rgba(255,255,255,0.5)' : 'none'};">EN</button>
+                        </div>
+
                         <div style="display: flex; align-items: center; gap: 8px; background: rgba(181,95,230,0.03); padding: 8px 20px; border-radius: 100px; border: 1px solid var(--purple-border);">
-                            <span style="font-size: 0.75rem; color: var(--text-secondary);">NEURAL LINK:</span>
+                            <span style="font-size: 0.75rem; color: var(--text-secondary);">${dict.neuralLink}</span>
                             <span class="mono" style="font-size: 0.8rem; font-weight: 700; color: ${state.neuralLinkConnected ? 'var(--neon-emerald)' : 'var(--neon-red)'};">
                                 ${state.neuralLinkConnected ? 'CONNECTED' : 'SEVERED'}
                             </span>
@@ -1374,7 +1782,7 @@ process YAMANAKA_OSK_REPROGRAM(
                         </div>
 
                         <div style="display: flex; align-items: center; gap: 8px;">
-                            <span style="font-size: 0.75rem; color: var(--text-secondary);">KNOX HEARTBEAT:</span>
+                            <span style="font-size: 0.75rem; color: var(--text-secondary);">${dict.knoxHeartbeat}</span>
                             <span class="status-dot ${state.neuralLinkConnected ? 'bg-blue' : 'bg-red'}"></span>
                         </div>
                     </div>
@@ -1388,7 +1796,7 @@ process YAMANAKA_OSK_REPROGRAM(
                 </main>
 
                 <footer style="border-top: 1px solid var(--purple-border); padding: 24px; text-align: center; font-size: 0.75rem; color: var(--text-secondary); background: rgba(3, 1, 8, 0.95);" class="mono">
-                    AETERNA v5.0 Substrate // ZERO-ENTROPY BIOLOGICAL CURE PROTOCOL // 2026
+                    ${dict.footer}
                 </footer>
             `;
         }
@@ -1396,7 +1804,7 @@ process YAMANAKA_OSK_REPROGRAM(
         // Run Vanilla engine
         window.addEventListener("DOMContentLoaded", () => {
             renderVanillaHUD();
-            addLogEntry("🟢 Self-Healing initialization complete. Offline Mode fully active.");
+            addLogEntry("init_complete");
         });
     </script>
 </body>
