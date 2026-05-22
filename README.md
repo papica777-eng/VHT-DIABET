@@ -96,9 +96,9 @@ graph BT
 
 ---
 
-## 🛡️ The Three Pillars of Clinical Safety
+## 🛡️ The Four Pillars of Clinical Safety
 
-The VHT platform acts as a defensive shield against health crises through three mathematically validated control layers embedded within the codebase:
+The VHT platform acts as a defensive shield against health crises through four mathematically validated control layers embedded within the codebase:
 
 ### 1. Pharmacotherapeutic Synchrony (Label Verification Gate)
 *   **Metabolic:** Intercepts accidental high-concentration insulin (e.g. U-200/U-300) dosing and dynamic basal-bolus recalculations.
@@ -117,6 +117,14 @@ The VHT platform acts as a defensive shield against health crises through three 
 *   **Neurological:** Parkinson motor deficit tracking, blocking high-coordination activities when tremor index exceeds 0.70.
 *   **Cardiovascular:** Cardiac output safety capping, suspending sports recommendation if left ventricular ejection fraction (LVEF) is under 35%.
 *   **Longevity:** VO2 max tracking to enhance hTERT telomerase preservation.
+
+### 4. AURA Active Safeguard & Knox TEE Lockout (Layer 4)
+*   **Composite Z-Score Verification:** Continuously tracks and calculates real-time patient homeostatic deviation for blood pH (Norm: 7.35–7.45) and Oxygen Saturation ($O_2$):
+    $$\text{pH}_{Z} = \frac{|\text{pH} - 7.40|}{0.05}$$
+    $$\text{O}_{2Z} = \frac{|\text{O}_2 - 97.5|}{2.5}$$
+    $$\text{Composite}_{Z} = \sqrt{\text{pH}_{Z}^2 + \text{O}_{2Z}^2}$$
+*   **3-Sigma (3.0σ) Threshold Enforcement:** If the physiological deviance exceeds the critical **`3.0σ`** boundary, the homeostatic watchdog immediately flags a critical exception.
+*   **Samsung Knox TEE Lockout:** Upon a 3.0σ breach, a hardware-anchored **TEE Lockout** command is cryptographically signed and issued via Samsung Knox APIs, instantly suspending all automated infusion pumps and physical actuators to prevent acute metabolic injury.
 
 ---
 
